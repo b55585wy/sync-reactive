@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Exercise from '../views/Exercise.vue'
-import Settings from '@/views/Settings.vue'
 
 const routes = [
   {
@@ -13,13 +12,7 @@ const routes = [
     path: '/exercise',
     name: 'Exercise',
     component: Exercise
-  },
-  {
-    path: '/breathing/PreparationView',
-    name: 'BreathingPreparationView',
-    component: () => import('@/views/breathing/PreparationView.vue')
   }
-
 ]
 
 const router = createRouter({

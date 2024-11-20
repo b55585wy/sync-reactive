@@ -40,16 +40,11 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import BluetoothService  from '@/services/BluetoothService.js'
-import { ElMessageBox, ElMessage } from 'element-plus'
-
-console.log('Imports loaded')
+import { BluetoothService } from '@/services/bluetooth'
 
 export default {
   name: 'Home',
   setup() {
-    console.log('Home component setup started')
-    
     const router = useRouter()
     const username = ref('用户')
     const todayMinutes = ref(0)
@@ -62,33 +57,33 @@ export default {
       { id: 'settings', name: '设置', icon: 'fas fa-cog' }
     ])
 
-    console.log('Data initialized')
-
     const startExercise = async () => {
       try {
         // 检查蓝牙连接状态
         if (!bluetoothService.getConnectionStatus()) {
-          if (window.confirm('设备未连接，是否现在连接设备？')) {
-            try {
-              // 调用连接心率带的方法
-              await bluetoothService.connectHeartRateBelt()
-              console.log('设备连接成功')
-              // 连接成功后，继续导航到准备页面
-              router.push('/breathing/PreparationView')
-            } catch (error) {
-              console.error('设备连接失败:', error)
-              alert('设备连接失败，请重试')
+          // 显示蓝牙连接弹窗
+          uni.showModal({
+            title: '设备未连接',
+            content: '是否现在连接设备？',
+            success: (res) => {
+              if (res.confirm) {
+                showDevicePopup()
+              }
             }
-            return
-          }
+          })
           return
         }
         
-        // 如果已经连接，直接导航到准备页面
-        router.push('/breathing/prepare')
+        // 如果已连接，直接进入准备页面
+        uni.navigateTo({
+          url: '/pages/breathing/prepare'
+        })
       } catch (error) {
         console.error('启动失败:', error)
-        alert('启动失败')
+        uni.showToast({
+          title: '启动失败',
+          icon: 'error'
+        })
       }
     }
 

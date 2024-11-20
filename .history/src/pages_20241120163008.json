@@ -13,12 +13,6 @@
       }
     },
     {
-      "path": "pages/breathing/training",
-      "style": {
-        "navigationBarTitleText": "呼吸训练"
-      }
-    },
-    {
       "path": "pages/device/connect",
       "style": {
         "navigationBarTitleText": "连接设备"

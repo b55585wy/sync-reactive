@@ -40,7 +40,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import BluetoothService  from '@/services/BluetoothService.js'
+import BluetoothService from '@/services/bluetooth.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 console.log('Imports loaded')
@@ -74,7 +74,7 @@ export default {
               await bluetoothService.connectHeartRateBelt()
               console.log('设备连接成功')
               // 连接成功后，继续导航到准备页面
-              router.push('/breathing/PreparationView')
+              router.push('/breathing/prepare')
             } catch (error) {
               console.error('设备连接失败:', error)
               alert('设备连接失败，请重试')

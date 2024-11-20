@@ -1,5 +1,14 @@
 <template>
   <div class="home">
+    <div class="debug-info" style="background: #f0f0f0; padding: 10px; margin: 10px;">
+      <p>数据加载状态:</p>
+      <ul>
+        <li>用户名: {{ username || '未加载' }}</li>
+        <li>今日分钟数: {{ todayMinutes || 0 }}</li>
+        <li>连续天数: {{ streakDays || 0 }}</li>
+      </ul>
+    </div>
+
     <header class="header">
       <h1>呼吸训练</h1>
       <div class="user-info">
@@ -38,9 +47,9 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import BluetoothService  from '@/services/BluetoothService.js'
+import { BluetoothService }  from '@/services/bluetooth.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 console.log('Imports loaded')
@@ -51,7 +60,7 @@ export default {
     console.log('Home component setup started')
     
     const router = useRouter()
-    const username = ref('用户')
+    const username = ref('')
     const todayMinutes = ref(0)
     const streakDays = ref(0)
     const bluetoothService = BluetoothService.getInstance()
@@ -74,7 +83,7 @@ export default {
               await bluetoothService.connectHeartRateBelt()
               console.log('设备连接成功')
               // 连接成功后，继续导航到准备页面
-              router.push('/breathing/PreparationView')
+              router.push('/breathing/prepare')
             } catch (error) {
               console.error('设备连接失败:', error)
               alert('设备连接失败，请重试')
@@ -95,6 +104,14 @@ export default {
     const handleAction = (actionId) => {
       console.log('Action clicked:', actionId)
     }
+
+    // 添加生命周期钩子来确认组件挂载
+    onMounted(() => {
+      console.log('Home component mounted')
+      console.log('Current username:', username.value)
+      console.log('Today minutes:', todayMinutes.value)
+      console.log('Streak days:', streakDays.value)
+    })
 
     return {
       username,

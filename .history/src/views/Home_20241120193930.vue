@@ -1,46 +1,56 @@
 <template>
   <div class="home">
-    <header class="header">
-      <h1>呼吸训练</h1>
-      <div class="user-info">
-        <span>欢迎, {{ username }}</span>
-      </div>
-    </header>
+    <div v-if="loading" class="loading-state">
+      加载中...
+    </div>
+    <div v-else-if="error" class="error-state">
+      {{ error }}
+      <button @click="loadUserData" class="retry-btn">重试</button>
+    </div>
+    
+    <template v-else>
+      <header class="header">
+        <h1>呼吸训练</h1>
+        <div class="user-info">
+          <span>欢迎, {{ username || '访客' }}</span>
+        </div>
+      </header>
 
-    <main class="main-content">
-      <div class="breathing-card">
-        <div class="stats">
-          <div class="stat-item">
-            <h3>今日训练</h3>
-            <p>{{ todayMinutes }} 分钟</p>
+      <main class="main-content">
+        <div class="breathing-card">
+          <div class="stats">
+            <div class="stat-item">
+              <h3>今日训练</h3>
+              <p>{{ todayMinutes }} 分钟</p>
+            </div>
+            <div class="stat-item">
+              <h3>连续天数</h3>
+              <p>{{ streakDays }} 天</p>
+            </div>
           </div>
-          <div class="stat-item">
-            <h3>连续天数</h3>
-            <p>{{ streakDays }} 天</p>
+          <button class="start-btn" @click="startExercise">
+            开始训练
+          </button>
+        </div>
+
+        <div class="quick-actions">
+          <div v-for="action in quickActions" 
+               :key="action.id" 
+               class="action-item"
+               @click="handleAction(action.id)">
+            <i :class="action.icon"></i>
+            <span>{{ action.name }}</span>
           </div>
         </div>
-        <button class="start-btn" @click="startExercise">
-          开始训练
-        </button>
-      </div>
-
-      <div class="quick-actions">
-        <div v-for="action in quickActions" 
-             :key="action.id" 
-             class="action-item"
-             @click="handleAction(action.id)">
-          <i :class="action.icon"></i>
-          <span>{{ action.name }}</span>
-        </div>
-      </div>
-    </main>
+      </main>
+    </template>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import BluetoothService  from '@/services/BluetoothService.js'
+import { BluetoothService }  from '@/services/bluetooth.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 console.log('Imports loaded')
@@ -51,7 +61,9 @@ export default {
     console.log('Home component setup started')
     
     const router = useRouter()
-    const username = ref('用户')
+    const loading = ref(false)
+    const error = ref(null)
+    const username = ref('访客')
     const todayMinutes = ref(0)
     const streakDays = ref(0)
     const bluetoothService = BluetoothService.getInstance()
@@ -64,31 +76,56 @@ export default {
 
     console.log('Data initialized')
 
+    const loadUserData = async () => {
+      loading.value = true
+      error.value = null
+      
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        username.value = '测试用户'
+        todayMinutes.value = 30
+        streakDays.value = 5
+        
+        console.log('数据加载成功')
+      } catch (err) {
+        console.error('数据加载失败:', err)
+        error.value = '数据加载失败，请稍后重试'
+      } finally {
+        loading.value = false
+      }
+    }
+
     const startExercise = async () => {
       try {
-        // 检查蓝牙连接状态
         if (!bluetoothService.getConnectionStatus()) {
-          if (window.confirm('设备未连接，是否现在连接设备？')) {
+          const result = await ElMessageBox.confirm(
+            '设备未连接，是否现在连接设备？',
+            '提示',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            }
+          )
+          
+          if (result === 'confirm') {
             try {
-              // 调用连接心率带的方法
               await bluetoothService.connectHeartRateBelt()
-              console.log('设备连接成功')
-              // 连接成功后，继续导航到准备页面
-              router.push('/breathing/PreparationView')
+              ElMessage.success('设备连接成功')
+              router.push('/breathing/prepare')
             } catch (error) {
               console.error('设备连接失败:', error)
-              alert('设备连接失败，请重试')
+              ElMessage.error('设备连接失败，请重试')
             }
-            return
           }
           return
         }
         
-        // 如果已经连接，直接导航到准备页面
         router.push('/breathing/prepare')
       } catch (error) {
         console.error('启动失败:', error)
-        alert('启动失败')
+        ElMessage.error('启动失败')
       }
     }
 
@@ -96,7 +133,13 @@ export default {
       console.log('Action clicked:', actionId)
     }
 
+    onMounted(() => {
+      loadUserData()
+    })
+
     return {
+      loading,
+      error,
       username,
       todayMinutes,
       streakDays,

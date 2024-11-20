@@ -40,7 +40,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import BluetoothService  from '@/services/BluetoothService.js'
+import { BluetoothService }  from '@/services/bluetooth.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 console.log('Imports loaded')
@@ -64,47 +64,36 @@ export default {
 
     console.log('Data initialized')
 
-    const startExercise = async () => {
-      try {
-        // 检查蓝牙连接状态
-        if (!bluetoothService.getConnectionStatus()) {
-          if (window.confirm('设备未连接，是否现在连接设备？')) {
-            try {
-              // 调用连接心率带的方法
-              await bluetoothService.connectHeartRateBelt()
-              console.log('设备连接成功')
-              // 连接成功后，继续导航到准备页面
-              router.push('/breathing/PreparationView')
-            } catch (error) {
-              console.error('设备连接失败:', error)
-              alert('设备连接失败，请重试')
-            }
-            return
-          }
-          return
+const startExercise = async () => {
+  try {
+    // 检查蓝牙连接状态
+    if (!bluetoothService.getConnectionStatus()) {
+      if (window.confirm('设备未连接，是否现在连接设备？')) {
+        try {
+          // 调用连接心率带的方法
+          await bluetoothService.connectHeartRateBelt()
+          console.log('设备连接成功')
+          // 连接成功后，继续导航到准备页面
+          router.push('/breathing/prepare')
+        } catch (error) {
+          console.error('设备连接失败:', error)
+          alert('设备连接失败，请重试')
         }
-        
-        // 如果已经连接，直接导航到准备页面
-        router.push('/breathing/prepare')
-      } catch (error) {
-        console.error('启动失败:', error)
-        alert('启动失败')
+        return
       }
+      return
     }
-
-    const handleAction = (actionId) => {
-      console.log('Action clicked:', actionId)
-    }
-
-    return {
-      username,
-      todayMinutes,
-      streakDays,
-      quickActions,
-      startExercise,
-      handleAction
-    }
+    
+    // 如果已经连接，直接导航到准备页面
+    router.push('/breathing/prepare')
+  } catch (error) {
+    console.error('启动失败:', error)
+    alert('启动失败')
   }
+}
+
+const handleAction = (actionId) => {
+  console.log('Action clicked:', actionId)
 }
 </script>
 

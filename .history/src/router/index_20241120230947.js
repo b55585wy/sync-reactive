@@ -14,11 +14,7 @@ const routes = [
     name: 'Exercise',
     component: Exercise
   },
-  {
-    path: '/breathing/PreparationView',
-    name: 'BreathingPreparationView',
-    component: () => import('@/views/breathing/PreparationView.vue')
-  }
+  
 
 ]
 

@@ -40,7 +40,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import BluetoothService  from '@/services/BluetoothService.js'
+import BluetoothService }  from '@/services/BluetoothService.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 console.log('Imports loaded')

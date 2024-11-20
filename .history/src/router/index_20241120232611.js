@@ -15,9 +15,9 @@ const routes = [
     component: Exercise
   },
   {
-    path: '/breathing/PreparationView',
-    name: 'BreathingPreparationView',
-    component: () => import('@/views/breathing/PreparationView.vue')
+    path: '/breathing/Pre',
+    name: 'BreathingPrepare',
+    component: () => import('@/views/breathing/Prepare.vue')
   }
 
 ]

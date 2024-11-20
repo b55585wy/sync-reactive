@@ -16,8 +16,8 @@ const routes = [
   },
   {
     path: '/breathing/PreparationView',
-    name: 'BreathingPreparationView',
-    component: () => import('@/views/breathing/PreparationView.vue')
+    name: 'BreathingPrepare',
+    component: () => import('@/views/breathing/Prepare.vue')
   }
 
 ]

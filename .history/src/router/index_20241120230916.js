@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
-import Exercise from '@/views/Exercise.vue'
+import Settings from '@/views/Settings.vue'
 
 const routes = [
   {
@@ -9,9 +9,14 @@ const routes = [
     component: Home
   },
   {
-    path: '/exercise',
-    name: 'Exercise',
-    component: Exercise
+    path: '/settings',
+    name: 'Settings',
+    component: Settings
+  },
+  {
+    path: '/breathing/prepare',
+    name: 'BreathingPrepare',
+    component: () => import('@/views/breathing/Prepare.vue')
   }
 ]
 
