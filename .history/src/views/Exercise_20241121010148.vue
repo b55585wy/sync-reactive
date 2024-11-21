@@ -183,326 +183,223 @@ export default {
             width: 2
           },
           itemStyle: {
-            color: '#409EFF'
+    <!-- 呼吸动画 -->
+    <breathing-animation 
+      :phase="currentPhase"
+      :is-active="isActive"
+      :current-time="currentTime"
+    />
+
+    <!-- 准备步骤 -->
+    <div class="preparation-steps">
+      <div 
+        v-for="(step, index) in preparationSteps" 
+        :key="index"
+        class="step-item"
+        :class="{ 
+          'completed': currentStepIndex > index,
+          'active': currentStepIndex === index 
+        }"
+        @click="handleStepClick(index)"
+      >
+        <div class="step-number">{{ index + 1 }}</div>
+        <div class="step-content">
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.description }}</p>
+        </div>
+        <div class="step-status">
+          <i v-if="currentStepIndex > index" class="icon-check"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 开始按钮 -->
+    <div class="action-buttons">
+      <button 
+        class="start-button"
+        :disabled="!canStart"
+        @click="startTraining"
+      >
+        {{ startButtonText }}
+      </button>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import BreathingAnimation from '@/components/breathing/BreathingAnimation.vue'
+import { useBreathingStore } from '@/stores/breathing'
+
+export default {
+  name: 'Exercise',
+  
+  components: {
+    BreathingAnimation
+  },
+
+  setup() {
+    const router = useRouter()
+    const store = useBreathingStore()
+    const currentStepIndex = ref(0)
+    const isActive = ref(false)
+    const currentTime = ref(0)
+    const deviceConnected = ref(false)
+
+    const preparationSteps = [
+      {
+        title: '调整姿势',
+        description: '找一个安静的地方，采用舒适的坐姿或躺姿',
+        action: () => { /* 姿势调整逻辑 */ }
+      },
+      {
+        title: '佩戴设备',
+        description: '将呼吸带轻轻系在腹部，确保不会滑动',
+        action: async () => {
+          // 尝试连接设备
+          try {
+            await store.connectDevice()
+            deviceConnected.value = true
+          } catch (error) {
+            console.error('设备连接失败:', error)
           }
-        }]
-      }
-      chart.setOption(option)
-    }
-
-    const updateChart = () => {
-      if (!chart) return
-      
-      const data = heartRateHistory.value
-      const times = Array.from({ length: data.length }, (_, i) => 
-        formatTime(i * 5)
-      )
-
-      chart.setOption({
-        xAxis: {
-          data: times
-        },
-        series: [{
-          data: data
-        }]
-      })
-    }
-
-    const formatTime = (seconds) => {
-      const mins = Math.floor(seconds / 60)
-      const secs = seconds % 60
-      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
-
-    const isInZone = (zone) => {
-      return currentHeartRate.value >= zone.min && currentHeartRate.value < zone.max
-    }
-
-    const startExercise = () => {
-      hasStarted.value = true
-      isExercising.value = true
-      startTimer()
-      // 模拟心跳动画
-      setInterval(() => {
-        isBeating.value = true
-        setTimeout(() => {
-          isBeating.value = false
-        }, 200)
-      }, 1000)
-    }
-
-    const pauseExercise = () => {
-      isExercising.value = false
-      stopTimer()
-    }
-
-    const toggleExercise = () => {
-      if (isExercising.value) {
-        pauseExercise()
-      } else {
-        startExercise()
-      }
-    }
-
-    const startTimer = () => {
-      timer = setInterval(() => {
-        elapsedTime.value++
-        // 每5秒记录一次心率数据
-        if (elapsedTime.value % 5 === 0) {
-          heartRateHistory.value.push(currentHeartRate.value)
-          updateChart()
         }
-        // 定期更新训练提示
-        if (elapsedTime.value % 30 === 0) {
-          currentTip.value = trainingTips[Math.floor(Math.random() * trainingTips.length)]
+      },
+      {
+        title: '设备检查',
+        description: '等待设备连接并校准完成',
+        action: async () => {
+          // 设备校准逻辑
+          await store.calibrateDevice()
         }
-      }, 1000)
-    }
+      }
+    ]
 
-    const stopTimer = () => {
-      if (timer) {
-        clearInterval(timer)
-        timer = null
+    const handleStepClick = async (index) => {
+      if (index <= currentStepIndex.value + 1) {
+        currentStepIndex.value = index
+        await preparationSteps[index].action()
       }
     }
 
-    const confirmStop = async () => {
-      try {
-        await ElMessageBox.confirm(
-          '确定要结束本次训练吗？',
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
-        )
-        stopTimer()
-        // 这里可以添加保存训练数据的逻辑
-        router.push('/')
-      } catch {
-        // 用户取消
+    const startTraining = () => {
+      if (canStart.value) {
+        store.startSession()
+        router.push('/training')
       }
     }
 
-    const confirmExit = async () => {
-      if (hasStarted.value) {
-        await confirmStop()
-      } else {
-        router.back()
-      }
-    }
-
-    // 生命周期钩子
-    onMounted(() => {
-      initChart()
-      // 模拟心率数据更新
-      setInterval(() => {
-        // 这里替换为实际的心率数据
-        currentHeartRate.value = Math.floor(70 + Math.random() * 30)
-      }, 1000)
-    })
-
-    onUnmounted(() => {
-      stopTimer()
-      if (chart) {
-        chart.dispose()
-      }
-    })
+    const pageTitle = computed(() => '准备开始')
+    const currentPhase = computed(() => 'prepare')
+    const canStart = computed(() => 
+      currentStepIndex.value === preparationSteps.length - 1 && 
+      deviceConnected.value
+    )
+    const startButtonText = computed(() => 
+      canStart.value ? '开始训练' : '请完成准备步骤'
+    )
 
     return {
-      router,
-      chartContainer,
-      isExercising,
-      hasStarted,
-      elapsedTime,
-      currentHeartRate,
-      averageHeartRate,
-      caloriesBurned,
-      heartRateZones,
-      currentTip,
-      isBeating,
-      formatTime,
-      isInZone,
-      toggleExercise,
-      confirmStop,
-      confirmExit
+      currentStepIndex,
+      preparationSteps,
+      isActive,
+      currentTime,
+      currentPhase,
+      pageTitle,
+      canStart,
+      startButtonText,
+      handleStepClick,
+      startTraining
     }
   }
 }
 </script>
 
 <style scoped>
-.exercise {
-  max-width: 1200px;
-  margin: 0 auto;
+.exercise-container {
   padding: 20px;
+  height: 100vh;
 }
 
 .exercise-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.exercise-header h1 {
+  font-size: 24px;
+  color: #333;
+}
+
+.preparation-steps {
+  margin-top: 20px;
+}
+
+.step-item {
   display: flex;
   align-items: center;
-  margin-bottom: 30px;
-  gap: 20px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: #f9f9f9;
+  transition: all 0.3s ease;
 }
 
-.metrics-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
+.step-item.completed {
+  background: #e6f3ff;
+  border: 1px solid #4a90e2;
 }
 
-.metric-card {
-  padding: 20px;
-  text-align: center;
+.step-item.active {
+  background: #e6f3ff;
+  border: 1px solid #4a90e2;
 }
 
-.heart-rate {
-  position: relative;
-  overflow: hidden;
-}
-
-.metric-value {
-  font-size: 48px;
-  font-weight: bold;
-  color: #409EFF;
-}
-
-.metric-value .unit {
-  font-size: 24px;
-  color: #666;
-  margin-left: 8px;
-}
-
-.metric-label {
-  color: #666;
-  margin-top: 10px;
-}
-
-.training-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #409EFF;
-}
-
-.stat-label {
-  color: #666;
-  margin-top: 5px;
-  font-size: 14px;
-}
-
-.chart-card {
-  margin-bottom: 20px;
-}
-
-.heart-rate-chart {
-  height: 300px;
-}
-
-.zone-indicator {
-  margin-bottom: 20px;
-}
-
-.zone-label {
-  margin-bottom: 10px;
-  color: #666;
-}
-
-.zone-bars {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.zone-bar {
-  padding: 10px;
-  border-radius: 4px;
-  text-align: center;
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background: #4a90e2;
   color: white;
-  opacity: 0.5;
-  transition: opacity 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
 }
 
-.zone-bar.active {
-  opacity: 1;
+.step-content h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
 }
 
-.zone-bar span {
-  display: block;
-  font-size: 12px;
-  margin-top: 4px;
+.step-content p {
+  font-size: 14px;
+  color: #666;
 }
 
-.controls {
+.step-status {
+  margin-left: 16px;
+}
+
+.action-buttons {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  margin-top: 40px;
+  margin-top: 20px;
 }
 
-.heart-animation {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 150px;
-  height: 150px;
-  background: radial-gradient(circle, rgba(64,158,255,0.2) 0%, rgba(64,158,255,0) 70%);
-  border-radius: 50%;
-  z-index: 0;
-  opacity: 0;
-  transition: transform 0.2s, opacity 0.2s;
+.start-button {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.heart-animation.beating {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.2);
-}
-
-.training-tips {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 600px;
-  z-index: 100;
-}
-
-.is-exercising {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .metrics-container {
-    grid-template-columns: 1fr;
-  }
-
-  .zone-bars {
-    grid-template-columns: 1fr;
-  }
+.start-button:disabled {
+  background: #f5f5f5;
+  color: #666;
 }
 </style> 

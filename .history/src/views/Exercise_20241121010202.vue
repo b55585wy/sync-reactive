@@ -435,74 +435,18 @@ export default {
 }
 
 .zone-bar.active {
-  opacity: 1;
+.start-button {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.zone-bar span {
-  display: block;
-  font-size: 12px;
-  margin-top: 4px;
-}
-
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 40px;
-}
-
-.heart-animation {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 150px;
-  height: 150px;
-  background: radial-gradient(circle, rgba(64,158,255,0.2) 0%, rgba(64,158,255,0) 70%);
-  border-radius: 50%;
-  z-index: 0;
-  opacity: 0;
-  transition: transform 0.2s, opacity 0.2s;
-}
-
-.heart-animation.beating {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.2);
-}
-
-.training-tips {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 600px;
-  z-index: 100;
-}
-
-.is-exercising {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .metrics-container {
-    grid-template-columns: 1fr;
-  }
-
-  .zone-bars {
-    grid-template-columns: 1fr;
-  }
+.start-button:disabled {
+  background: #f5f5f5;
+  color: #666;
 }
 </style> 

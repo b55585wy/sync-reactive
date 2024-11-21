@@ -96,7 +96,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import bluetoothService from '@/services/BluetoothService';
+import { bluetoothServ  ice } from '@/services/BluetoothService';
 
 // 状态管理
 const isBreathingBandConnected = ref(false);
