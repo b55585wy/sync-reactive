@@ -1,137 +1,160 @@
 <template>
   <div class="home">
-    <!-- 顶部状态栏 -->
+    <!-- 顶部用户信息 -->
     <header class="header">
       <div class="user-profile">
-        <el-avatar :size="40" :src="userAvatar">
-          {{ settingsStore.username?.charAt(0) || '用' }}
+        <el-avatar :size="48" class="avatar">
+          {{ settingsStore.username?.charAt(0) || '未' }}
         </el-avatar>
         <div class="user-info">
           <h3>{{ settingsStore.username || '未设置用户名' }}</h3>
-          <span class="subtitle">{{ getGreeting() }}</span>
+          <p class="greeting">{{ getGreeting() }}</p>
         </div>
       </div>
-      <div class="action-buttons">
-        <el-button circle @click="router.push('/settings')">
-          <i class="el-icon-setting"></i>
-        </el-button>
-      </div>
+      <el-button circle class="settings-btn" @click="router.push('/settings')">
+        <el-icon><Setting /></el-icon>
+      </el-button>
     </header>
 
-    <!-- 主要内容区域 -->
-    <main class="main-content">
-      <!-- 训练数据概览 -->
-      <section class="stats-overview">
-        <div class="stat-card">
-          <div class="stat-value">{{ todayMinutes }}</div>
-          <div class="stat-label">今日训练(分钟)</div>
+    <!-- 训练数据概览 -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-content">
+          <span class="stat-value">{{ todayMinutes }}</span>
+          <span class="stat-unit">分钟</span>
         </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ streakDays }}</div>
-          <div class="stat-label">连续训练(天)</div>
+        <div class="stat-label">
+          <el-icon><Timer /></el-icon>
+          今日训练
         </div>
-        <div class="stat-card">
-          <div class="stat-value">{{ weeklyProgress }}%</div>
-          <div class="stat-label">周目标完成度</div>
-        </div>
-      </section>
+      </div>
 
-      <!-- 设备状态卡片 -->
-      <section class="device-status" v-if="showDeviceStatus">
+      <div class="stat-card">
+        <div class="stat-content">
+          <span class="stat-value">{{ streakDays }}</span>
+          <span class="stat-unit">天</span>
+        </div>
+        <div class="stat-label">
+          <el-icon><Calendar /></el-icon>
+          连续训练
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-content">
+          <span class="stat-value">{{ weeklyProgress }}</span>
+          <span class="stat-unit">%</span>
+        </div>
+        <div class="stat-label">
+          <el-icon><Trophy /></el-icon>
+          周目标完成度
+        </div>
+      </div>
+    </div>
+
+    <!-- 设备状态 -->
+    <section class="section devices-section">
+      <div class="section-header">
         <h2>
           <el-icon><Connection /></el-icon>
           设备状态
         </h2>
-        <div class="device-cards">
-          <!-- 心率带卡片 -->
-          <div class="device-card" 
-               :class="{ active: deviceStore.isHeartRateBandConnected }"
-               @click="handleDeviceClick('heartRate')">
-            <div class="device-icon" :class="{ connected: deviceStore.isHeartRateBandConnected }">
-              <el-icon><Monitor /></el-icon>
-            </div>
-            <span class="device-name">心率带</span>
-            <el-tag :type="deviceStore.isHeartRateBandConnected ? 'success' : 'info'" 
-                    class="device-status-tag">
-              <el-icon>
-                <component :is="deviceStore.isHeartRateBandConnected ? 'CircleCheck' : 'Link'" />
-              </el-icon>
+      </div>
+      
+      <div class="devices-grid">
+        <!-- 心率带 -->
+        <div class="device-card" 
+             :class="{ 'is-connected': deviceStore.isHeartRateBandConnected }"
+             @click="handleDeviceClick('heartRate')">
+          <div class="device-icon">
+            <el-icon><Monitor /></el-icon>
+          </div>
+          <div class="device-info">
+            <h3>心率带</h3>
+            <div class="device-status">
+              <span class="status-dot"></span>
               {{ deviceStore.isHeartRateBandConnected ? '已连接' : '点击连接' }}
-            </el-tag>
-            <div v-if="deviceStore.isHeartRateBandConnected" class="device-data">
-              <el-icon color="#f56c6c"><Histogram /></el-icon>
-              <span>{{ deviceStore.currentHeartRate }} BPM</span>
+            </div>
+            <div v-if="deviceStore.isHeartRateBandConnected" 
+                 class="device-data">
+              {{ deviceStore.currentHeartRate }} 
+              <span class="unit">BPM</span>
             </div>
           </div>
+        </div>
 
-          <!-- 呼吸带卡片 -->
-          <div class="device-card" 
-               :class="{ active: deviceStore.isBreathingBandConnected }"
-               @click="handleDeviceClick('breathing')">
-            <div class="device-icon" :class="{ connected: deviceStore.isBreathingBandConnected }">
-              <el-icon><WindPower /></el-icon>
-            </div>
-            <span class="device-name">呼吸带</span>
-            <el-tag :type="deviceStore.isBreathingBandConnected ? 'success' : 'info'"
-                    class="device-status-tag">
-              <el-icon>
-                <component :is="deviceStore.isBreathingBandConnected ? 'CircleCheck' : 'Link'" />
-              </el-icon>
+        <!-- 呼吸带 -->
+        <div class="device-card"
+             :class="{ 'is-connected': deviceStore.isBreathingBandConnected }"
+             @click="handleDeviceClick('breathing')">
+          <div class="device-icon">
+            <el-icon><WindPower /></el-icon>
+          </div>
+          <div class="device-info">
+            <h3>呼吸带</h3>
+            <div class="device-status">
+              <span class="status-dot"></span>
               {{ deviceStore.isBreathingBandConnected ? '已连接' : '点击连接' }}
-            </el-tag>
-            <div v-if="deviceStore.isBreathingBandConnected" class="device-data">
-              <el-icon color="#409eff"><Odometer /></el-icon>
-              <span>{{ deviceStore.currentBreathingRate }} 次/分</span>
+            </div>
+            <div v-if="deviceStore.isBreathingBandConnected" 
+                 class="device-data">
+              {{ deviceStore.currentBreathingRate }}
+              <span class="unit">次/分</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- 训练模式选择 -->
-      <section class="training-modes">
-        <h2>训练模式</h2>
-        <div class="mode-grid">
-          <div v-for="mode in availableTrainingModes" 
-               :key="mode.id" 
-               class="mode-card"
-               @click="startTraining(mode)">
-            <div class="mode-icon" :class="mode.color">
-              <i :class="mode.icon"></i>
-            </div>
-            <div class="mode-info">
-              <h3>{{ mode.name }}</h3>
-              <p>{{ mode.description }}</p>
-              <div class="mode-tags">
-                <el-tag size="small" :type="mode.difficulty">{{ mode.difficultyText }}</el-tag>
-                <el-tag size="small" type="info">{{ mode.duration }}分钟</el-tag>
-              </div>
+    <!-- 训练模式 -->
+    <section class="section modes-section" v-if="deviceStore.hasAnyDeviceConnected">
+      <div class="section-header">
+        <h2>
+          <el-icon><List /></el-icon>
+          训练模
+        </h2>
+      </div>
+      <div class="modes-grid">
+        <div v-for="mode in availableTrainingModes" 
+             :key="mode.id" 
+             class="mode-card"
+             @click="startTraining(mode)">
+          <div class="mode-icon" :class="mode.color">
+            <i :class="mode.icon"></i>
+          </div>
+          <div class="mode-info">
+            <h3>{{ mode.name }}</h3>
+            <p>{{ mode.description }}</p>
+            <div class="mode-tags">
+              <el-tag size="small" :type="mode.difficulty">{{ mode.difficultyText }}</el-tag>
+              <el-tag size="small" type="info">{{ mode.duration }}分钟</el-tag>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- 最近训练记录 -->
-      <section class="recent-trainings" v-if="recentTrainings.length">
-        <h2>最近训练</h2>
-        <div class="training-timeline">
-          <div v-for="training in recentTrainings" 
-               :key="training.id" 
-               class="training-record"
-               @click="viewTrainingDetails(training)">
-            <div class="training-date">
-              {{ formatDate(training.date) }}
-            </div>
-            <div class="training-info">
-              <h4>{{ training.modeName }}</h4>
-              <div class="training-stats">
-                <span><i class="el-icon-timer"></i> {{ training.duration }}分钟</span>
-                <span><i class="el-icon-data-line"></i> {{ training.avgHeartRate }}BPM</span>
-              </div>
+    <!-- 最近训练记录 -->
+    <section class="recent-trainings" v-if="recentTrainings.length">
+      <h2>最近训练</h2>
+      <div class="training-timeline">
+        <div v-for="training in recentTrainings" 
+             :key="training.id" 
+             class="training-record"
+             @click="viewTrainingDetails(training)">
+          <div class="training-date">
+            {{ formatDate(training.date) }}
+          </div>
+          <div class="training-info">
+            <h4>{{ training.modeName }}</h4>
+            <div class="training-stats">
+              <span><i class="el-icon-timer"></i> {{ training.duration }}分钟</span>
+              <span><i class="el-icon-data-line"></i> {{ training.avgHeartRate }}BPM</span>
             </div>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
 
     <!-- 快速开始按钮 -->
     <div class="quick-start" v-if="canStartTraining">
@@ -187,7 +210,9 @@ import {
   Timer,
   DataLine,
   Trophy,
-  Calendar
+  Calendar,
+  List,
+  Setting
 } from '@element-plus/icons-vue'
 
 const router = useRouter()

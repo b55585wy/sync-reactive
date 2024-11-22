@@ -38,50 +38,26 @@
 
       <!-- 设备状态卡片 -->
       <section class="device-status" v-if="showDeviceStatus">
-        <h2>
-          <el-icon><Connection /></el-icon>
-          设备状态
-        </h2>
+        <h2>设备状态</h2>
         <div class="device-cards">
-          <!-- 心率带卡片 -->
-          <div class="device-card" 
-               :class="{ active: deviceStore.isHeartRateBandConnected }"
-               @click="handleDeviceClick('heartRate')">
-            <div class="device-icon" :class="{ connected: deviceStore.isHeartRateBandConnected }">
-              <el-icon><Monitor /></el-icon>
-            </div>
-            <span class="device-name">心率带</span>
-            <el-tag :type="deviceStore.isHeartRateBandConnected ? 'success' : 'info'" 
-                    class="device-status-tag">
-              <el-icon>
-                <component :is="deviceStore.isHeartRateBandConnected ? 'CircleCheck' : 'Link'" />
-              </el-icon>
-              {{ deviceStore.isHeartRateBandConnected ? '已连接' : '点击连接' }}
+          <div class="device-card" :class="{ active: deviceStore.isHeartRateBandConnected }">
+            <i class="icon-heart"></i>
+            <span>心率带</span>
+            <el-tag :type="deviceStore.isHeartRateBandConnected ? 'success' : 'info'">
+              {{ deviceStore.isHeartRateBandConnected ? '已连接' : '未连接' }}
             </el-tag>
             <div v-if="deviceStore.isHeartRateBandConnected" class="device-data">
-              <el-icon color="#f56c6c"><Histogram /></el-icon>
-              <span>{{ deviceStore.currentHeartRate }} BPM</span>
+              {{ deviceStore.currentHeartRate }} BPM
             </div>
           </div>
-
-          <!-- 呼吸带卡片 -->
-          <div class="device-card" 
-               :class="{ active: deviceStore.isBreathingBandConnected }"
-               @click="handleDeviceClick('breathing')">
-            <div class="device-icon" :class="{ connected: deviceStore.isBreathingBandConnected }">
-              <el-icon><WindPower /></el-icon>
-            </div>
-            <span class="device-name">呼吸带</span>
-            <el-tag :type="deviceStore.isBreathingBandConnected ? 'success' : 'info'"
-                    class="device-status-tag">
-              <el-icon>
-                <component :is="deviceStore.isBreathingBandConnected ? 'CircleCheck' : 'Link'" />
-              </el-icon>
-              {{ deviceStore.isBreathingBandConnected ? '已连接' : '点击连接' }}
+          <div class="device-card" :class="{ active: deviceStore.isBreathingBandConnected }">
+            <i class="icon-breathing"></i>
+            <span>呼吸带</span>
+            <el-tag :type="deviceStore.isBreathingBandConnected ? 'success' : 'info'">
+              {{ deviceStore.isBreathingBandConnected ? '已连接' : '未连接' }}
             </el-tag>
             <div v-if="deviceStore.isBreathingBandConnected" class="device-data">
-              <el-icon color="#409eff"><Odometer /></el-icon>
-              <span>{{ deviceStore.currentBreathingRate }} 次/分</span>
+              {{ deviceStore.currentBreathingRate }} 次/分
             </div>
           </div>
         </div>
@@ -176,19 +152,6 @@ import { useSettingsStore } from '@/stores/settings'
 import { useDeviceStore } from '@/stores/device'
 import { useTrainingStore } from '@/stores/training'
 import { ElMessage } from 'element-plus'
-import { 
-  Monitor, 
-  WindPower, 
-  Connection, 
-  Link, 
-  CircleCheck, 
-  Histogram, 
-  Odometer,
-  Timer,
-  DataLine,
-  Trophy,
-  Calendar
-} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -201,15 +164,12 @@ const selectedMode = ref(null)
 const selectedDuration = ref(10)
 const userAvatar = ref('')
 const showDeviceStatus = ref(true)
-const todayMinutes = ref(0)
-const streakDays = ref(0)
-const recentTrainings = ref([])
 
 // 计算属性
 const canStartTraining = computed(() => deviceStore.hasAnyDeviceConnected)
 const weeklyProgress = computed(() => {
-  const weeklyGoal = settingsStore.weeklyGoal || 150 // 默认周目标150分钟
-  return Math.min(Math.round((todayMinutes.value / weeklyGoal) * 100), 100)
+  // 计算周训练目标完成度
+  return Math.min(Math.round((todayMinutes.value / settingsStore.weeklyGoal) * 100), 100)
 })
 
 // 可用的训练模式
@@ -257,6 +217,9 @@ const availableTrainingModes = computed(() => {
 
   return modes
 })
+
+// 最近训练记录
+const recentTrainings = ref([])
 
 // 方法
 const getGreeting = () => {
@@ -307,68 +270,9 @@ const formatDate = (date) => {
 
 // 生命周期钩子
 onMounted(async () => {
-  try {
-    // 并行加载数据
-    await Promise.all([
-      getTodayTrainingMinutes(),
-      getStreakDays(),
-      loadRecentTrainings()
-    ])
-  } catch (error) {
-    console.error('加载数据失败:', error)
-  }
-})
-
-// 获取今日训练时长
-const getTodayTrainingMinutes = async () => {
-  try {
-    const today = new Date().toISOString().split('T')[0]
-    const trainings = await trainingStore.getTrainingsByDate(today)
-    todayMinutes.value = trainings.reduce((total, training) => {
-      return total + (training.duration || 0)
-    }, 0)
-  } catch (error) {
-    console.error('获取今日训练时长失败:', error)
-    todayMinutes.value = 0
-  }
-}
-
-// 获取连续训练天数
-const getStreakDays = async () => {
-  try {
-    const trainings = await trainingStore.getRecentTrainings()
-    let streak = 0
-    let currentDate = new Date()
-    
-    while (true) {
-      const dateStr = currentDate.toISOString().split('T')[0]
-      const hasTraining = trainings.some(t => t.date.startsWith(dateStr))
-      
-      if (!hasTraining) break
-      streak++
-      currentDate.setDate(currentDate.getDate() - 1)
-    }
-    
-    streakDays.value = streak
-  } catch (error) {
-    console.error('获取连续训练天数失败:', error)
-    streakDays.value = 0
-  }
-}
-
-// 加载最近训练记录
-const loadRecentTrainings = async () => {
+  // 加载最近训练记录
   recentTrainings.value = await trainingStore.getRecentTrainings()
-}
-
-// 添加设备点击处理函数
-const handleDeviceClick = (deviceType) => {
-  if (deviceType === 'heartRate' && !deviceStore.isHeartRateBandConnected) {
-    router.push('/prepare/devices')
-  } else if (deviceType === 'breathing' && !deviceStore.isBreathingBandConnected) {
-    router.push('/prepare/devices')
-  }
-}
+})
 </script>
 
 <style scoped>
@@ -447,49 +351,28 @@ const handleDeviceClick = (deviceType) => {
 }
 
 .device-card {
-  position: relative;
-  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
   cursor: pointer;
-  border: 1px solid #ebeef5;
+  transition: transform 0.2s;
 }
 
-.device-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #409eff, #67c23a);
-  transform: scaleX(0);
-  transition: transform 0.3s;
+.device-card:hover {
+  transform: translateY(-2px);
 }
 
-.device-card.active::before {
-  transform: scaleX(1);
-}
-
-.device-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #f5f7fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.device-card i {
+  font-size: 24px;
+  color: #4a90e2;
   margin-bottom: 8px;
+  display: block;
 }
 
-.device-name {
+.device-card span {
   font-size: 14px;
   color: #666;
-}
-
-.device-status-tag {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  margin-top: 8px;
 }
 
 .device-data {

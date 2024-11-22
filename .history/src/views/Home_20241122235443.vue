@@ -43,10 +43,7 @@
           设备状态
         </h2>
         <div class="device-cards">
-          <!-- 心率带卡片 -->
-          <div class="device-card" 
-               :class="{ active: deviceStore.isHeartRateBandConnected }"
-               @click="handleDeviceClick('heartRate')">
+          <div class="device-card" :class="{ active: deviceStore.isHeartRateBandConnected }">
             <div class="device-icon" :class="{ connected: deviceStore.isHeartRateBandConnected }">
               <el-icon><Monitor /></el-icon>
             </div>
@@ -54,34 +51,21 @@
             <el-tag :type="deviceStore.isHeartRateBandConnected ? 'success' : 'info'" 
                     class="device-status-tag">
               <el-icon>
-                <component :is="deviceStore.isHeartRateBandConnected ? 'CircleCheck' : 'Link'" />
+                <component :is="deviceStore.isHeartRateBandConnected ? 'Check' : 'Close'" />
               </el-icon>
-              {{ deviceStore.isHeartRateBandConnected ? '已连接' : '点击连接' }}
             </el-tag>
             <div v-if="deviceStore.isHeartRateBandConnected" class="device-data">
-              <el-icon color="#f56c6c"><Histogram /></el-icon>
-              <span>{{ deviceStore.currentHeartRate }} BPM</span>
+              {{ deviceStore.currentHeartRate }} BPM
             </div>
           </div>
-
-          <!-- 呼吸带卡片 -->
-          <div class="device-card" 
-               :class="{ active: deviceStore.isBreathingBandConnected }"
-               @click="handleDeviceClick('breathing')">
-            <div class="device-icon" :class="{ connected: deviceStore.isBreathingBandConnected }">
-              <el-icon><WindPower /></el-icon>
-            </div>
-            <span class="device-name">呼吸带</span>
-            <el-tag :type="deviceStore.isBreathingBandConnected ? 'success' : 'info'"
-                    class="device-status-tag">
-              <el-icon>
-                <component :is="deviceStore.isBreathingBandConnected ? 'CircleCheck' : 'Link'" />
-              </el-icon>
-              {{ deviceStore.isBreathingBandConnected ? '已连接' : '点击连接' }}
+          <div class="device-card" :class="{ active: deviceStore.isBreathingBandConnected }">
+            <i class="icon-breathing"></i>
+            <span>呼吸带</span>
+            <el-tag :type="deviceStore.isBreathingBandConnected ? 'success' : 'info'">
+              {{ deviceStore.isBreathingBandConnected ? '已连接' : '未连接' }}
             </el-tag>
             <div v-if="deviceStore.isBreathingBandConnected" class="device-data">
-              <el-icon color="#409eff"><Odometer /></el-icon>
-              <span>{{ deviceStore.currentBreathingRate }} 次/分</span>
+              {{ deviceStore.currentBreathingRate }} 次/分
             </div>
           </div>
         </div>
@@ -176,19 +160,6 @@ import { useSettingsStore } from '@/stores/settings'
 import { useDeviceStore } from '@/stores/device'
 import { useTrainingStore } from '@/stores/training'
 import { ElMessage } from 'element-plus'
-import { 
-  Monitor, 
-  WindPower, 
-  Connection, 
-  Link, 
-  CircleCheck, 
-  Histogram, 
-  Odometer,
-  Timer,
-  DataLine,
-  Trophy,
-  Calendar
-} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -360,15 +331,6 @@ const getStreakDays = async () => {
 const loadRecentTrainings = async () => {
   recentTrainings.value = await trainingStore.getRecentTrainings()
 }
-
-// 添加设备点击处理函数
-const handleDeviceClick = (deviceType) => {
-  if (deviceType === 'heartRate' && !deviceStore.isHeartRateBandConnected) {
-    router.push('/prepare/devices')
-  } else if (deviceType === 'breathing' && !deviceStore.isBreathingBandConnected) {
-    router.push('/prepare/devices')
-  }
-}
 </script>
 
 <style scoped>
@@ -447,49 +409,28 @@ const handleDeviceClick = (deviceType) => {
 }
 
 .device-card {
-  position: relative;
-  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
   cursor: pointer;
-  border: 1px solid #ebeef5;
+  transition: transform 0.2s;
 }
 
-.device-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #409eff, #67c23a);
-  transform: scaleX(0);
-  transition: transform 0.3s;
+.device-card:hover {
+  transform: translateY(-2px);
 }
 
-.device-card.active::before {
-  transform: scaleX(1);
-}
-
-.device-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #f5f7fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.device-card i {
+  font-size: 24px;
+  color: #4a90e2;
   margin-bottom: 8px;
+  display: block;
 }
 
-.device-name {
+.device-card span {
   font-size: 14px;
   color: #666;
-}
-
-.device-status-tag {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  margin-top: 8px;
 }
 
 .device-data {
