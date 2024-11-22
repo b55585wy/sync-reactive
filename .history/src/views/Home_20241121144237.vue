@@ -74,7 +74,7 @@ export default {
               await bluetoothService.connectHeartRateBelt()
               console.log('设备连接成功')
               // 连接成功后，继续导航到准备页面
-              router.push('/prepare')
+              router.push('/breathing/PreparationView')
             } catch (error) {
               console.error('设备连接失败:', error)
               alert('设备连接失败，请重试')
@@ -85,7 +85,7 @@ export default {
         }
         
         // 如果已经连接，直接导航到准备页面
-        router.push('/prepare')
+        router.push('/breathing/prepare')
       } catch (error) {
         console.error('启动失败:', error)
         alert('启动失败')
@@ -94,14 +94,9 @@ export default {
 
     const handleAction = (actionId) => {
       console.log('Action clicked:', actionId)
-      //跳转到设置界面
-      if(actionId=='settings'){
-        router.push('/Settings')
-        return
-      }
     }
 
-    
+    //跳转到设置界面
     
 
     return {

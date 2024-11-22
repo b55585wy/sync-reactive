@@ -1,3 +1,4 @@
+<!--  -->
 <template>
   <div class="preparation-view">
     <PreparationSteps 

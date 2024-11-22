@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref,computed } from 'vue';
+import { ref，computed } from 'vue';
 import { useDeviceStore } from '@/stores/device';
 import { useRouter } from 'vue-router';
 
@@ -208,169 +208,164 @@ const startTraining = () => {
 
 <style scoped>
 .preparation-steps {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 20px;
 }
 
-.steps-container {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-}
-
-.step-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.step-header h3 {
-  font-size: 24px;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.device-tips {
-  color: #666;
-  font-size: 15px;
-  background: #f8f9fa;
-  padding: 8px 16px;
-  border-radius: 20px;
-  transition: all 0.3s ease;
-}
-
-/* 设备网格布局 */
-.devices-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-/* 设备卡片样式 */
-.device-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
+.step-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  transition: all 0.3s ease;
-  border: 1px solid #eee;
-  position: relative;
-  overflow: hidden;
-}
-
-.device-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #e0e0e0, #f5f5f5);
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.device-card.connected::before {
-  background: linear-gradient(90deg, #4CAF50, #81C784);
+.step-item:hover {
+  background-color: #e9ecef;
 }
 
-.device-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+.step-item.completed {
+  background-color: #e8f5e9;
 }
 
-.device-icon {
-  width: 48px;
-  height: 48px;
+.step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f7fa;
-  border-radius: 12px;
-  transition: all 0.3s ease;
+  margin-right: 15px;
 }
 
-.device-card.connected .device-icon {
-  background: linear-gradient(135deg, #4CAF50, #81C784);
-  color: white;
-}
-
-.device-info {
+.step-content {
   flex: 1;
 }
 
-.device-info h4 {
-  margin: 0 0 4px;
-  font-size: 18px;
-  color: #2c3e50;
+.step-checkbox {
+  margin-left: 15px;
 }
 
-.device-info p {
-  margin: 0;
+.action-buttons {
+  margin-top: 30px;
+  padding: 0 20px;
+}
+
+.confirm-btn {
+  width: 100%;
+  height: 44px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 22px;
+  font-size: 16px;
+}
+
+.confirm-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.timer-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 30px;
+}
+
+.status {
+  font-size: 20px;
+  margin-bottom: 5px;
+}
+
+.time {
+  font-size: 36px;
+  font-weight: bold;
+}
+
+.device-status {
+  text-align: center;
   color: #666;
-  font-size: 14px;
+  margin: 10px 0;
 }
 
-/* 功能提示区域 */
+.next-btn {
+  width: 100%;
+  height: 44px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 22px;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.next-btn:disabled {
+  background-color: #ccc;
+  opacity: 0.8;
+}
+
+.checking {
+  position: relative;
+}
+
+.checking::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .feature-hints {
-  background: linear-gradient(135deg, #f8f9fa, #ffffff);
-  border-radius: 16px;
-  padding: 24px;
-  margin-top: 32px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 24px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
 
 .feature-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .feature-item {
-  background: white;
-  padding: 16px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: all 0.3s ease;
-  border: 1px solid #eee;
+  gap: 8px;
+  padding: 8px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.feature-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.device-required {
+  border: 2px solid #ff9800;
 }
 
-/* 按钮样式 */
-button {
-  padding: 10px 24px;
-  border-radius: 8px;
-  border: none;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: #f0f2f5;
-  color: #666;
-}
-
-button:hover {
-  background: #e8eaed;
-}
-
-.btn-connected {
-  background: #4CAF50;
-  color: white;
-}
-
-.btn-connected:hover {
-  background: #43A047;
+.required-tag {
+  font-size: 12px;
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
 }
 
 .action-area {
@@ -379,10 +374,13 @@ button:hover {
 }
 
 .btn-start {
-  background: linear-gradient(135deg, #4CAF50, #81C784);
-  color: white;
-  padding: 14px 36px;
+  padding: 12px 32px;
   font-size: 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 .btn-start:disabled {

@@ -10,7 +10,7 @@ const routes = [
   {
     // 准备页面
     path: '/prepare',
-    component: () => import('@/views/prepare/PreparationView.vue'),
+    component: () => import('@/views/breathing/PreparationView.vue'),
     children: [
       {
         path: 'devices',

@@ -16,6 +16,8 @@ class BluetoothService {
   }
 
   async connectHeartRateBelt() {
+    const deviceStore = useDeviceStore();
+    
     try {
       const bluetoothDevice = await navigator.bluetooth.requestDevice({
         filters: [
@@ -36,11 +38,8 @@ class BluetoothService {
       this.device.value = bluetoothDevice
       this.isConnected.value = true
       
-      // 直接修改 state
-      const deviceStore = useDeviceStore()
-      deviceStore.$patch({
-        isHeartRateBandConnected: true
-      })
+      // 更新 store 中的心率带状态
+      deviceStore.setHeartRateBandStatus(true);
       
       // 监听设备断开连接
       bluetoothDevice.addEventListener('gattserverdisconnected', this.handleDisconnection.bind(this))
@@ -63,15 +62,12 @@ class BluetoothService {
   }
 
   handleDisconnection() {
+    const deviceStore = useDeviceStore();
     console.log('设备已断开连接')
     this.isConnected.value = false
     this.heartRate.value = 0
-    
-    const deviceStore = useDeviceStore()
-    deviceStore.$patch({
-      isHeartRateBandConnected: false
-    })
-    
+    // 更新 store 中的心率带状态
+    deviceStore.setHeartRateBandStatus(false);
     ElMessage.warning('设备已断开连接')
   }
 

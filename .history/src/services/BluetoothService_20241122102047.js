@@ -16,6 +16,8 @@ class BluetoothService {
   }
 
   async connectHeartRateBelt() {
+    const deviceStore = useDeviceStore();
+    
     try {
       const bluetoothDevice = await navigator.bluetooth.requestDevice({
         filters: [
@@ -35,12 +37,6 @@ class BluetoothService {
 
       this.device.value = bluetoothDevice
       this.isConnected.value = true
-      
-      // 直接修改 state
-      const deviceStore = useDeviceStore()
-      deviceStore.$patch({
-        isHeartRateBandConnected: true
-      })
       
       // 监听设备断开连接
       bluetoothDevice.addEventListener('gattserverdisconnected', this.handleDisconnection.bind(this))
@@ -66,25 +62,16 @@ class BluetoothService {
     console.log('设备已断开连接')
     this.isConnected.value = false
     this.heartRate.value = 0
-    
-    const deviceStore = useDeviceStore()
-    deviceStore.$patch({
-      isHeartRateBandConnected: false
-    })
-    
     ElMessage.warning('设备已断开连接')
   }
 
   async disconnect() {
-    const deviceStore = useDeviceStore();
     if (this.device.value?.gatt?.connected) {
       try {
         await this.device.value.gatt.disconnect()
         this.device.value = null
         this.heartRate.value = 0
         this.isConnected.value = false
-        // 更新 store 中的心率带状态
-        deviceStore.setHeartRateBandStatus(false);
         ElMessage.success('设备已断开连接')
       } catch (error) {
         console.error('断开连接失败:', error)
@@ -107,6 +94,28 @@ class BluetoothService {
       BluetoothService.instance = new BluetoothService()
     }
     return BluetoothService.instance
+  }
+
+  // 确保连接成功后更新 store
+  async connectDevice(type: 'breathing' | 'heartRate') {
+    const deviceStore = useDeviceStore();
+    
+    try {
+      // 连接设备的逻辑
+      await this.connect();
+      
+      // 更新 store 状态
+      if (type === 'breathing') {
+        deviceStore.setBreathingBandStatus(true);
+      } else {
+        deviceStore.setHeartRateBandStatus(true);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('连接失败:', error);
+      return false;
+    }
   }
 }
 

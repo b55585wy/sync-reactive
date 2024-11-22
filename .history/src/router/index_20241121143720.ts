@@ -10,7 +10,7 @@ const routes = [
   {
     // 准备页面
     path: '/prepare',
-    component: () => import('@/views/prepare/PreparationView.vue'),
+    component: () => import('@/views/breathing/PreparationView.vue'),
     children: [
       {
         path: 'devices',
@@ -48,7 +48,7 @@ const routes = [
     // 设置页面
     path: '/settings',
     component: () => import('@/views/Settings.vue'),
-    // 还需要配置参数比如设置界面返回的用户信息
+    // 还需要
   }
 ];
 

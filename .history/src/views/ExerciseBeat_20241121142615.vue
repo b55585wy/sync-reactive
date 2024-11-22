@@ -1,5 +1,5 @@
 <template>
-  <div class="exercise">
+  <div class="exercise-">
     <header class="exercise-header">
       <el-button @click="confirmExit" icon="el-icon-arrow-left" plain>
         返回
@@ -97,18 +97,21 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessageBox, ElMessage } from 'element-plus'
-import * as echarts from 'echarts'
-import BluetoothService from '@/services/BluetoothService'
-
+import { ElMessageBox } from 'element-plus'
+import { useHeartRateChart } from '@/composables/useHeartRateChart'
+import { useExerciseTimer } from '@/composables/useExerciseTimer'
+import { calculateCaloriesBurned, getHeartRateZone } from '@/utils/exerciseUtils'
+import { HeartRateZone } from '@/types/exercise'
 export default {
   name: 'Exercise',
   setup() {
     const router = useRouter()
     const bluetoothService = BluetoothService.getInstance()
     const chartContainer = ref(null)
+    const { chartRef, updateChart } = useHeartRateChart()
+    const { elapsedTime, startTimer, stopTimer } = useExerciseTimer()
     let chart = null
 
     // 状态变量
