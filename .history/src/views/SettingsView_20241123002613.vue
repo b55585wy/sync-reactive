@@ -193,87 +193,6 @@
         </div>
       </section>
 
-      <!-- 训练目标设置 -->
-      <section class="settings-section">
-        <h2>训练目标设置</h2>
-        <div class="settings-card">
-          <div class="target-settings">
-            <!-- 目标心率设置 -->
-            <div class="setting-item">
-              <div class="setting-label">
-                <h4>目标心率范围</h4>
-                <p class="setting-desc">设置您希望通过呼吸训练达到的心率范围</p>
-              </div>
-              <div class="heart-rate-range">
-                <el-input-number 
-                  v-model="targetHeartRateMin" 
-                  :min="40" 
-                  :max="targetHeartRateMax"
-                  size="small"
-                  @change="updateHeartRateSettings">
-                  <template #prefix>最小</template>
-                </el-input-number>
-                <span class="separator">-</span>
-                <el-input-number 
-                  v-model="targetHeartRateMax" 
-                  :min="targetHeartRateMin" 
-                  :max="220-settingsStore.age"
-                  size="small"
-                  @change="updateHeartRateSettings">
-                  <template #prefix>最大</template>
-                </el-input-number>
-                <span class="unit">BPM</span>
-              </div>
-            </div>
-
-            <!-- 呼吸节奏设置 -->
-            <div class="setting-item">
-              <div class="setting-label">
-                <h4>默认呼吸节奏</h4>
-                <p class="setting-desc">设置默认的呼吸训练节奏（秒）</p>
-              </div>
-              <div class="breathing-rhythm">
-                <el-input-number 
-                  v-model="inhaleTime" 
-                  :min="2" 
-                  :max="6"
-                  size="small">
-                  <template #prefix>吸气</template>
-                </el-input-number>
-                <el-input-number 
-                  v-model="holdTime" 
-                  :min="0" 
-                  :max="4"
-                  size="small">
-                  <template #prefix>屏息</template>
-                </el-input-number>
-                <el-input-number 
-                  v-model="exhaleTime" 
-                  :min="2" 
-                  :max="8"
-                  size="small">
-                  <template #prefix>呼气</template>
-                </el-input-number>
-              </div>
-            </div>
-
-            <!-- 训练提醒设置 -->
-            <div class="setting-item">
-              <div class="setting-label">
-                <h4>训练提醒</h4>
-                <p class="setting-desc">设置每日训练提醒时间</p>
-              </div>
-              <el-time-picker
-                v-model="reminderTime"
-                format="HH:mm"
-                placeholder="选择提醒时间"
-                size="small"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- 底部操作按钮 -->
       <div class="settings-actions">
         <el-button @click="cancelChanges">取消</el-button>
@@ -290,7 +209,6 @@ import { useSettingsStore } from '@/stores/settings'
 import { useDeviceStore } from '@/stores/deviceStore'
 import BluetoothService from '@/services/BluetoothService'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Monitor, WindPower } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -319,38 +237,10 @@ const tempSettings = ref({
   autoSync: true
 })
 
-// 心率目标设置
-const targetHeartRateMin = ref(60);
-const targetHeartRateMax = ref(80);
-const inhaleTime = ref(4);
-const holdTime = ref(2);
-const exhaleTime = ref(6);
-const reminderTime = ref(null);
-
-// 更新心率设置
-const updateHeartRateSettings = () => {
-  settingsStore.saveSettings({
-    targetHeartRateMin: targetHeartRateMin.value,
-    targetHeartRateMax: targetHeartRateMax.value,
-    inhaleTime: inhaleTime.value,
-    holdTime: holdTime.value,
-    exhaleTime: exhaleTime.value,
-    reminderTime: reminderTime.value
-  });
-};
-
 // 初始化临时设置
 onMounted(async () => {
   const currentSettings = await settingsStore.getSettings()
   tempSettings.value = { ...currentSettings }
-  // 加载已保存的设置
-  const settings = settingsStore.getSettings();
-  targetHeartRateMin.value = settings.targetHeartRateMin || 60;
-  targetHeartRateMax.value = settings.targetHeartRateMax || 80;
-  inhaleTime.value = settings.inhaleTime || 4;
-  holdTime.value = settings.holdTime || 2;
-  exhaleTime.value = settings.exhaleTime || 6;
-  reminderTime.value = settings.reminderTime || null;
 })
 
 // 取消修改
@@ -393,58 +283,34 @@ const syncData = async () => {
   }
 }
 
-// 处理设备连接/断开
-const handleDeviceClick = async (deviceType: 'heartRate' | 'breathing') => {
+// 断开设备连接
+const disconnectDevice = async (deviceType) => {
   try {
+    await ElMessageBox.confirm(
+      `确定要断开${deviceType === 'heartRate' ? '心率带' : '呼吸带'}连接吗？`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
     if (deviceType === 'heartRate') {
-      if (!deviceStore.isHeartRateBandConnected) {
-        // 连接心率带
-        await bluetoothService.connectHeartRateBand();
-        deviceStore.setHeartRateBandConnected(true);
-        ElMessage.success('心率带连接成功');
-      } else {
-        // 断开心率带
-        await ElMessageBox.confirm(
-          '确定要断开心率带连接吗？',
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
-        );
-        await bluetoothService.disconnectHeartRateBand();
-        deviceStore.setHeartRateBandConnected(false);
-        ElMessage.success('心率带已断开连接');
-      }
-    } else if (deviceType === 'breathing') {
-      if (!deviceStore.isBreathingBandConnected) {
-        // 连接呼吸带
-        // await bluetoothService.connectBreathingBand();
-        // deviceStore.setBreathingBandConnected(true);
-        ElMessage.success('呼吸带连接成功');
-      } else {
-        await ElMessageBox.confirm(
-          '确定要断开呼吸带连接吗？',
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
-        );
-        // await bluetoothService.disconnectBreathingBand();
-        deviceStore.setBreathingBandConnected(false);
-        ElMessage.success('呼吸带已断开连接');
-      }
+      await bluetoothService.disconnectHeartRateBand()
+      deviceStore.setHeartRateBandConnected(false)
+    } else {
+      await bluetoothService.disconnectBreathingBand()
+      deviceStore.setBreathingBandConnected(false)
     }
+    
+    ElMessage.success('设备已断开连接')
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('设备操作失败:', error);
-      ElMessage.error('设备操作失败: ' + (error.message || '未知错误'));
+      ElMessage.error('断开连接失败：' + error.message)
     }
   }
-};
+}
 
 // 获取设备图标
 const getDeviceIcon = (type) => {
@@ -561,52 +427,6 @@ const formatTime = (time) => {
 .icon-breathing {
   font-size: 24px;
   color: #409EFF;
-}
-
-.target-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.setting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.setting-label {
-  flex: 1;
-}
-
-.setting-label h4 {
-  margin: 0;
-  font-size: 16px;
-  color: #333;
-}
-
-.setting-desc {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.heart-rate-range,
-.breathing-rhythm {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.separator {
-  color: #666;
-}
-
-.unit {
-  color: #666;
-  margin-left: 8px;
 }
 
 /* 响应式调整 */

@@ -1,5 +1,3 @@
-import { useSettingsStore } from '@/stores/settings'
-
 <template>
   <div class="training-session">
     <!-- 顶部状态栏 -->
@@ -21,14 +19,13 @@ import { useSettingsStore } from '@/stores/settings'
         </div>
         <div class="heart-rate-display">
           <div class="current-value" :class="getHeartRateStatus">
-            {{ deviceStore.currentHeartRate || '--' }}
+            {{ currentHeartRate }}
           </div>
-          <div class="unit">BPM</div>
-          <div class="target-range">
-            目标范围: {{ settingsStore.targetHeartRateMin }} - {{ settingsStore.targetHeartRateMax }} BPM
-          </div>
-          <div class="guidance-message" :class="getHeartRateStatus">
-            {{ getGuidanceMessage }}
+          <div class="target-indicator">
+            <div class="target-range">
+              目标: {{ targetHeartRateMin }} - {{ targetHeartRateMax }} BPM
+            </div>
+            <div class="guidance-message">{{ getGuidanceMessage }}</div>
           </div>
         </div>
         <div class="heart-rate-chart">
@@ -59,7 +56,7 @@ import { useSettingsStore } from '@/stores/settings'
         <div class="breathing-guide" :class="breathingPhase">
           <div class="breathing-circle">
             <div class="instruction">{{ getBreathingInstruction }}</div>
-            <div class="countdown">{{ breathingCountdown }}s</div>
+            <div class="timer">{{ breathingTimer }}</div>
           </div>
         </div>
         <div class="breathing-stats">
@@ -85,7 +82,6 @@ import BluetoothService from '@/services/BluetoothService';
 import { ElMessageBox } from 'element-plus';
 import { useTrainingStore } from '@/stores/training';
 import { useDeviceStore } from '@/stores/device';
-import { useSettingsStore } from '@/stores/settings';
 
 const props = withDefaults(defineProps<{
   mode?: 'breathing' | 'heartRate' | 'combined';
@@ -99,7 +95,6 @@ const router = useRouter();
 const bluetoothService = new BluetoothService();
 const trainingStore = useTrainingStore();
 const deviceStore = useDeviceStore();
-const settingsStore = useSettingsStore();
 
 // 状态管理
 const elapsedTime = ref(0);
@@ -111,11 +106,10 @@ const heartRateSum = ref(0);
 const heartRateCount = ref(0);
 const breathingPhase = ref('inhale');
 const breathingRate = ref(6);
-const breathingCountdown = ref(settingsStore.inhaleTime);
 
 // 计时器
 let timer: number;
-let breathingIntervalTimer: number;
+let breathingTimer: number;
 
 // 计算属性
 const getSessionTitle = computed(() => {
@@ -136,18 +130,16 @@ const breathingText = computed(() => {
 });
 
 const getHeartRateStatus = computed(() => {
-  if (!deviceStore.currentHeartRate) return 'no-data';
-  if (deviceStore.currentHeartRate > settingsStore.targetHeartRateMax) return 'too-high';
-  if (deviceStore.currentHeartRate < settingsStore.targetHeartRateMin) return 'too-low';
+  if (currentHeartRate.value > targetHeartRateMax.value) return 'too-high';
+  if (currentHeartRate.value < targetHeartRateMin.value) return 'too-low';
   return 'optimal';
 });
 
 const getGuidanceMessage = computed(() => {
-  if (!deviceStore.currentHeartRate) return '等待心率数据...';
-  if (deviceStore.currentHeartRate > settingsStore.targetHeartRateMax) {
+  if (currentHeartRate.value > targetHeartRateMax.value) {
     return '心率偏高，请跟随呼吸引导放松';
   }
-  if (deviceStore.currentHeartRate < settingsStore.targetHeartRateMin) {
+  if (currentHeartRate.value < targetHeartRateMin.value) {
     return '心率偏低，可以稍微提升呼吸频率';
   }
   return '心率处于理想范围，请保持当前节奏';
@@ -155,9 +147,10 @@ const getGuidanceMessage = computed(() => {
 
 const getBreathingInstruction = computed(() => {
   switch(breathingPhase.value) {
-    case 'inhale': return `吸气 (${breathingCountdown.value}s)`;
-    case 'hold': return `屏息 (${breathingCountdown.value}s)`;
-    case 'exhale': return `呼气 (${breathingCountdown.value}s)`;
+    case 'inhale': return '吸气';
+    case 'hold': return '屏息';
+    case 'exhale': return '呼气';
+    default: return '准备';
   }
 });
 
@@ -192,7 +185,7 @@ const confirmEndSession = async () => {
     
     // 1. 先停止计时器
     clearInterval(timer);
-    if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
+    if (breathingTimer) clearInterval(breathingTimer);
     
     // 2. 保存训练数据
     trainingStore.endTraining();
@@ -252,39 +245,17 @@ onMounted(() => {
 
   // 呼吸引导
   if (props.mode === 'breathing' || props.mode === 'combined') {
-    breathingIntervalTimer = setInterval(() => {
-      updateBreathing();
-    }, 1000);
+    breathingTimer = setInterval(() => {
+      breathingPhase.value = breathingPhase.value === 'inhale' ? 'exhale' : 'inhale';
+    }, 5000); // 5秒一次呼吸循环
   }
 });
 
 onUnmounted(() => {
   // 确保组件卸载时清理资源
   clearInterval(timer);
-  if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
+  if (breathingTimer) clearInterval(breathingTimer);
 });
-
-// 更新呼吸计时
-const updateBreathing = () => {
-  breathingCountdown.value--;
-  
-  if (breathingCountdown.value <= 0) {
-    switch (breathingPhase.value) {
-      case 'inhale':
-        breathingPhase.value = 'hold';
-        breathingCountdown.value = settingsStore.holdTime;
-        break;
-      case 'hold':
-        breathingPhase.value = 'exhale';
-        breathingCountdown.value = settingsStore.exhaleTime;
-        break;
-      case 'exhale':
-        breathingPhase.value = 'inhale';
-        breathingCountdown.value = settingsStore.inhaleTime;
-        break;
-    }
-  }
-}
 </script>
 
 <style scoped>
@@ -352,19 +323,21 @@ const updateBreathing = () => {
 .current-value.too-high { color: #f56c6c; }
 .current-value.too-low { color: #e6a23c; }
 .current-value.optimal { color: #67c23a; }
-.current-value.no-data { color: #909399; }
+
+.target-indicator {
+  text-align: center;
+  margin-top: 12px;
+}
 
 .target-range {
   font-size: 14px;
   color: #666;
-  margin-top: 8px;
 }
 
 .guidance-message {
-  margin-top: 16px;
+  margin-top: 8px;
   font-size: 16px;
-  padding: 8px;
-  border-radius: 4px;
+  color: #409EFF;
 }
 
 .breathing-guide {
@@ -378,6 +351,7 @@ const updateBreathing = () => {
   height: 200px;
   border-radius: 50%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: 24px;

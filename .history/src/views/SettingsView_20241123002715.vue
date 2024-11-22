@@ -193,87 +193,6 @@
         </div>
       </section>
 
-      <!-- 训练目标设置 -->
-      <section class="settings-section">
-        <h2>训练目标设置</h2>
-        <div class="settings-card">
-          <div class="target-settings">
-            <!-- 目标心率设置 -->
-            <div class="setting-item">
-              <div class="setting-label">
-                <h4>目标心率范围</h4>
-                <p class="setting-desc">设置您希望通过呼吸训练达到的心率范围</p>
-              </div>
-              <div class="heart-rate-range">
-                <el-input-number 
-                  v-model="targetHeartRateMin" 
-                  :min="40" 
-                  :max="targetHeartRateMax"
-                  size="small"
-                  @change="updateHeartRateSettings">
-                  <template #prefix>最小</template>
-                </el-input-number>
-                <span class="separator">-</span>
-                <el-input-number 
-                  v-model="targetHeartRateMax" 
-                  :min="targetHeartRateMin" 
-                  :max="220-settingsStore.age"
-                  size="small"
-                  @change="updateHeartRateSettings">
-                  <template #prefix>最大</template>
-                </el-input-number>
-                <span class="unit">BPM</span>
-              </div>
-            </div>
-
-            <!-- 呼吸节奏设置 -->
-            <div class="setting-item">
-              <div class="setting-label">
-                <h4>默认呼吸节奏</h4>
-                <p class="setting-desc">设置默认的呼吸训练节奏（秒）</p>
-              </div>
-              <div class="breathing-rhythm">
-                <el-input-number 
-                  v-model="inhaleTime" 
-                  :min="2" 
-                  :max="6"
-                  size="small">
-                  <template #prefix>吸气</template>
-                </el-input-number>
-                <el-input-number 
-                  v-model="holdTime" 
-                  :min="0" 
-                  :max="4"
-                  size="small">
-                  <template #prefix>屏息</template>
-                </el-input-number>
-                <el-input-number 
-                  v-model="exhaleTime" 
-                  :min="2" 
-                  :max="8"
-                  size="small">
-                  <template #prefix>呼气</template>
-                </el-input-number>
-              </div>
-            </div>
-
-            <!-- 训练提醒设置 -->
-            <div class="setting-item">
-              <div class="setting-label">
-                <h4>训练提醒</h4>
-                <p class="setting-desc">设置每日训练提醒时间</p>
-              </div>
-              <el-time-picker
-                v-model="reminderTime"
-                format="HH:mm"
-                placeholder="选择提醒时间"
-                size="small"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- 底部操作按钮 -->
       <div class="settings-actions">
         <el-button @click="cancelChanges">取消</el-button>
@@ -319,38 +238,10 @@ const tempSettings = ref({
   autoSync: true
 })
 
-// 心率目标设置
-const targetHeartRateMin = ref(60);
-const targetHeartRateMax = ref(80);
-const inhaleTime = ref(4);
-const holdTime = ref(2);
-const exhaleTime = ref(6);
-const reminderTime = ref(null);
-
-// 更新心率设置
-const updateHeartRateSettings = () => {
-  settingsStore.saveSettings({
-    targetHeartRateMin: targetHeartRateMin.value,
-    targetHeartRateMax: targetHeartRateMax.value,
-    inhaleTime: inhaleTime.value,
-    holdTime: holdTime.value,
-    exhaleTime: exhaleTime.value,
-    reminderTime: reminderTime.value
-  });
-};
-
 // 初始化临时设置
 onMounted(async () => {
   const currentSettings = await settingsStore.getSettings()
   tempSettings.value = { ...currentSettings }
-  // 加载已保存的设置
-  const settings = settingsStore.getSettings();
-  targetHeartRateMin.value = settings.targetHeartRateMin || 60;
-  targetHeartRateMax.value = settings.targetHeartRateMax || 80;
-  inhaleTime.value = settings.inhaleTime || 4;
-  holdTime.value = settings.holdTime || 2;
-  exhaleTime.value = settings.exhaleTime || 6;
-  reminderTime.value = settings.reminderTime || null;
 })
 
 // 取消修改
@@ -561,52 +452,6 @@ const formatTime = (time) => {
 .icon-breathing {
   font-size: 24px;
   color: #409EFF;
-}
-
-.target-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.setting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.setting-label {
-  flex: 1;
-}
-
-.setting-label h4 {
-  margin: 0;
-  font-size: 16px;
-  color: #333;
-}
-
-.setting-desc {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.heart-rate-range,
-.breathing-rhythm {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.separator {
-  color: #666;
-}
-
-.unit {
-  color: #666;
-  margin-left: 8px;
 }
 
 /* 响应式调整 */

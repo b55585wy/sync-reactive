@@ -1,5 +1,3 @@
-import { useSettingsStore } from '@/stores/settings'
-
 <template>
   <div class="training-session">
     <!-- 顶部状态栏 -->

@@ -1,5 +1,3 @@
-import { useSettingsStore } from '@/stores/settings'
-
 <template>
   <div class="training-session">
     <!-- 顶部状态栏 -->
@@ -59,7 +57,6 @@ import { useSettingsStore } from '@/stores/settings'
         <div class="breathing-guide" :class="breathingPhase">
           <div class="breathing-circle">
             <div class="instruction">{{ getBreathingInstruction }}</div>
-            <div class="countdown">{{ breathingCountdown }}s</div>
           </div>
         </div>
         <div class="breathing-stats">
@@ -111,11 +108,11 @@ const heartRateSum = ref(0);
 const heartRateCount = ref(0);
 const breathingPhase = ref('inhale');
 const breathingRate = ref(6);
-const breathingCountdown = ref(settingsStore.inhaleTime);
+const breathingTimer = ref(settingsStore.inhaleTime);
 
 // 计时器
 let timer: number;
-let breathingIntervalTimer: number;
+let breathingTimer: number;
 
 // 计算属性
 const getSessionTitle = computed(() => {
@@ -155,9 +152,9 @@ const getGuidanceMessage = computed(() => {
 
 const getBreathingInstruction = computed(() => {
   switch(breathingPhase.value) {
-    case 'inhale': return `吸气 (${breathingCountdown.value}s)`;
-    case 'hold': return `屏息 (${breathingCountdown.value}s)`;
-    case 'exhale': return `呼气 (${breathingCountdown.value}s)`;
+    case 'inhale': return `吸气 (${breathingTimer.value}s)`;
+    case 'hold': return `屏息 (${breathingTimer.value}s)`;
+    case 'exhale': return `呼气 (${breathingTimer.value}s)`;
   }
 });
 
@@ -192,7 +189,7 @@ const confirmEndSession = async () => {
     
     // 1. 先停止计时器
     clearInterval(timer);
-    if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
+    if (breathingTimer) clearInterval(breathingTimer);
     
     // 2. 保存训练数据
     trainingStore.endTraining();
@@ -252,39 +249,17 @@ onMounted(() => {
 
   // 呼吸引导
   if (props.mode === 'breathing' || props.mode === 'combined') {
-    breathingIntervalTimer = setInterval(() => {
-      updateBreathing();
-    }, 1000);
+    breathingTimer = setInterval(() => {
+      breathingPhase.value = breathingPhase.value === 'inhale' ? 'exhale' : 'inhale';
+    }, 5000); // 5秒一次呼吸循环
   }
 });
 
 onUnmounted(() => {
   // 确保组件卸载时清理资源
   clearInterval(timer);
-  if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
+  if (breathingTimer) clearInterval(breathingTimer);
 });
-
-// 更新呼吸计时
-const updateBreathing = () => {
-  breathingCountdown.value--;
-  
-  if (breathingCountdown.value <= 0) {
-    switch (breathingPhase.value) {
-      case 'inhale':
-        breathingPhase.value = 'hold';
-        breathingCountdown.value = settingsStore.holdTime;
-        break;
-      case 'hold':
-        breathingPhase.value = 'exhale';
-        breathingCountdown.value = settingsStore.exhaleTime;
-        break;
-      case 'exhale':
-        breathingPhase.value = 'inhale';
-        breathingCountdown.value = settingsStore.inhaleTime;
-        break;
-    }
-  }
-}
 </script>
 
 <style scoped>
