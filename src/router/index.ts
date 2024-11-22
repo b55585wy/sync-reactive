@@ -37,7 +37,7 @@ const routes = [
         component: () => import('@/components/training/GuidedBreathing.vue'),
       },
       {
-        path: 'heart-monitor',
+        path: 'heart-rate',
         component: () => import('@/components/training/HeartMonitor.vue'),
       },
       // ... 其他训练模式路由
