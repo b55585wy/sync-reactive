@@ -72,7 +72,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import BluetoothService from '@/services/BluetoothService';
 import { ElMessageBox } from 'element-plus';
-import { useTrainingStore } from '@/stores/training';
 
 const props = withDefaults(defineProps<{
   mode?: 'breathing' | 'heartRate' | 'combined';
@@ -84,7 +83,6 @@ const props = withDefaults(defineProps<{
 
 const router = useRouter();
 const bluetoothService = new BluetoothService();
-const trainingStore = useTrainingStore();
 
 // 状态管理
 const elapsedTime = ref(0);
@@ -133,9 +131,6 @@ const updateHeartRateStats = () => {
     heartRateSum.value += currentRate;
     heartRateCount.value++;
     avgHeartRate.value = Math.round(heartRateSum.value / heartRateCount.value);
-    
-    // 添加到 store
-    trainingStore.addHeartRateRecord(currentRate);
   }
 };
 
@@ -155,27 +150,20 @@ const confirmEndSession = async () => {
 const endSession = async () => {
   clearInterval(timer);
   clearInterval(breathingTimer);
-  
-  trainingStore.endTraining();
-  
-  try {
-    await router.push({
-      name: 'TrainingSummary',
-      query: {
-        duration: elapsedTime.value.toString(),
-        mode: props.mode
-      }
-    });
-  } catch (error) {
-    console.error('导航到总结页面失败:', error);
-    ElMessage.error('无法显示训练总结');
-  }
+  await router.push({
+    name: 'TrainingSummary',
+    state: { 
+      mode: props.mode,
+      duration: props.duration,
+      maxHeartRate: maxHeartRate.value,
+      minHeartRate: minHeartRate.value,
+      avgHeartRate: avgHeartRate.value
+    }
+  });
 };
 
 // 生命周期钩子
 onMounted(() => {
-  trainingStore.startTraining();
-  
   // 开始计时
   timer = setInterval(() => {
     elapsedTime.value++;

@@ -1,115 +1,40 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import * as echarts from 'echarts';
-import { useTrainingStore } from '@/stores/training';
 
 const route = useRoute();
 const router = useRouter();
-const trainingStore = useTrainingStore();
 
 // 训练数据
-const trainingData = computed(() => {
-  const heartRateHistory = trainingStore.heartRateHistory;
-  console.log('心率历史数据:', heartRateHistory); // 调试用
-  
-  if (!heartRateHistory || heartRateHistory.length === 0) {
-    console.warn('没有心率历史数据');
-    return {
-      duration: Number(route.query.duration || 0),
-      startTime: trainingStore.startTime || new Date().toISOString(),
-      mode: route.params.mode || 'heart-monitoring',
-      averageHeartRate: 0,
-      maxHeartRate: 0,
-      minHeartRate: 0,
-      heartRateZones: {
-        rest: 0,
-        warmUp: 0,
-        fatBurn: 0,
-        cardio: 0,
-        peak: 0
-      },
-      caloriesBurned: 0,
-      heartRateData: []
-    };
-  }
-  
-  // 计算心率统计数据
-  const heartRates = heartRateHistory.map(h => h.value);
-  const averageHeartRate = Math.round(
-    heartRates.reduce((a, b) => a + b, 0) / heartRates.length
-  );
-  const maxHeartRate = Math.max(...heartRates);
-  const minHeartRate = Math.min(...heartRates);
-  
-  // 计算心率区间分布
-  const zones = calculateHeartRateZones(heartRates);
-  
-  // 估算卡路里消耗
-  const caloriesBurned = Math.round(
-    (Number(route.query.duration || 0) * averageHeartRate * 0.14)
-  );
-  
-  return {
-    duration: Number(route.query.duration || 0),
-    startTime: trainingStore.startTime || new Date().toISOString(),
-    mode: route.params.mode || 'heart-monitoring',
-    averageHeartRate,
-    maxHeartRate,
-    minHeartRate,
-    heartRateZones: zones,
-    caloriesBurned,
-    heartRateData: heartRateHistory.map(h => ({
-      value: h.value,
-      timestamp: h.timestamp
-    }))
-  };
+const trainingData = ref({
+  duration: route.query.duration || 0,
+  startTime: route.query.startTime || new Date().toISOString(),
+  mode: route.query.mode || 'heart-monitoring',
+  averageHeartRate: 75,
+  maxHeartRate: 95,
+  minHeartRate: 65,
+  heartRateZones: {
+    rest: 25,      // 休息区间占比
+    warmUp: 30,    // 热身区间占比
+    fatBurn: 35,   // 燃脂区间占比
+    cardio: 10,    // 有氧区间占比
+    peak: 0        // 峰值区间占比
+  },
+  caloriesBurned: 156,
+  heartRateData: [] // 将从后端获取详细的心率数据
 });
 
 // 计算训练效果评分（示例算法）
 const trainingScore = computed(() => {
-  const heartRateData = trainingData.value.heartRateData;
-  
-  // 如果没有数据，返回默认值
-  if (!heartRateData || heartRateData.length === 0) {
-    return {
-      overall: 0,
-      stability: 0,
-      intensity: 0,
-      duration: 0
-    };
-  }
-  
-  // 计算心率稳定性
-  const hrValues = heartRateData.map(h => h.value);
-  const hrVariance = calculateVariance(hrValues);
-  const stabilityScore = Math.min(100, Math.max(0, 100 - (hrVariance / 2)));
-  
-  // 计算训练强度
-  const intensityScore = Math.min(100, 
-    (trainingData.value.heartRateZones.fatBurn + 
-     trainingData.value.heartRateZones.cardio) * 1.2
-  );
-  
-  // 计算时长达标率
-  const targetDuration = Number(route.query.duration || 15) * 60;
-  const actualDuration = heartRateData.length;
-  const durationScore = Math.min(100, (actualDuration / targetDuration) * 100);
-  
-  // 总体评分
-  const overall = Math.round(
-    (stabilityScore * 0.3) + 
-    (intensityScore * 0.4) + 
-    (durationScore * 0.3)
-  );
-  
-  return {
-    overall,
-    stability: Math.round(stabilityScore),
-    intensity: Math.round(intensityScore),
-    duration: Math.round(durationScore)
+  const score = {
+    overall: 85,        // 总体评分
+    stability: 88,      // 心率稳定性
+    intensity: 82,      // 训练强度
+    duration: 85        // 时长达标率
   };
+  return score;
 });
 
 // 生成建议
@@ -150,21 +75,7 @@ onMounted(() => {
 
 const initHeartRateChart = () => {
   const chartDom = document.getElementById('heartRateChart');
-  if (!chartDom) return;
-  
   const myChart = echarts.init(chartDom);
-  
-  // 确保有数据
-  if (!trainingData.value.heartRateData.length) {
-    myChart.setOption({
-      title: {
-        text: '暂无心率数据',
-        left: 'center',
-        top: 'center'
-      }
-    });
-    return;
-  }
   
   const option = {
     title: {
@@ -209,21 +120,7 @@ const initHeartRateChart = () => {
 
 const initZonesChart = () => {
   const chartDom = document.getElementById('zonesChart');
-  if (!chartDom) return;
-  
   const myChart = echarts.init(chartDom);
-  
-  // 确保有数据
-  if (!trainingData.value.heartRateData.length) {
-    myChart.setOption({
-      title: {
-        text: '暂无区间数据',
-        left: 'center',
-        top: 'center'
-      }
-    });
-    return;
-  }
   
   const option = {
     title: {
@@ -277,23 +174,6 @@ const backToHome = () => {
 const shareResults = () => {
   ElMessage.success('分享功能开发中...');
 };
-
-// 在组件卸载时清理
-onUnmounted(() => {
-  const heartRateChart = echarts.getInstanceByDom(
-    document.getElementById('heartRateChart')
-  );
-  const zonesChart = echarts.getInstanceByDom(
-    document.getElementById('zonesChart')
-  );
-  
-  if (heartRateChart) {
-    heartRateChart.dispose();
-  }
-  if (zonesChart) {
-    zonesChart.dispose();
-  }
-});
 </script>
 
 <template>

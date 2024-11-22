@@ -174,8 +174,6 @@ const endSession = async () => {
 
 // 生命周期钩子
 onMounted(() => {
-  trainingStore.startTraining();
-  
   // 开始计时
   timer = setInterval(() => {
     elapsedTime.value++;

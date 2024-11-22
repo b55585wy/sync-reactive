@@ -3,22 +3,21 @@ import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import * as echarts from 'echarts';
-import { useTrainingStore } from '@/stores/training';
 
 const route = useRoute();
 const router = useRouter();
-const trainingStore = useTrainingStore();
 
 // 训练数据
 const trainingData = computed(() => {
-  const heartRateHistory = trainingStore.heartRateHistory;
-  console.log('心率历史数据:', heartRateHistory); // 调试用
+  const heartRateHistory = trainingStore.heartRateHistory || [];
+  const startTime = trainingStore.startTime;
+  const duration = Number(route.query.duration || 0);
   
-  if (!heartRateHistory || heartRateHistory.length === 0) {
-    console.warn('没有心率历史数据');
+  // 添加安全检查
+  if (!heartRateHistory.length) {
     return {
-      duration: Number(route.query.duration || 0),
-      startTime: trainingStore.startTime || new Date().toISOString(),
+      duration,
+      startTime: startTime || new Date().toISOString(),
       mode: route.params.mode || 'heart-monitoring',
       averageHeartRate: 0,
       maxHeartRate: 0,
@@ -48,12 +47,12 @@ const trainingData = computed(() => {
   
   // 估算卡路里消耗
   const caloriesBurned = Math.round(
-    (Number(route.query.duration || 0) * averageHeartRate * 0.14)
+    (duration * averageHeartRate * 0.14)
   );
   
   return {
-    duration: Number(route.query.duration || 0),
-    startTime: trainingStore.startTime || new Date().toISOString(),
+    duration,
+    startTime: startTime || new Date().toISOString(),
     mode: route.params.mode || 'heart-monitoring',
     averageHeartRate,
     maxHeartRate,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import * as echarts from 'echarts';
@@ -9,31 +9,11 @@ const route = useRoute();
 const router = useRouter();
 const trainingStore = useTrainingStore();
 
-// 训练数据
+// 训练数据，从 store 中获取实际数据
 const trainingData = computed(() => {
   const heartRateHistory = trainingStore.heartRateHistory;
-  console.log('心率历史数据:', heartRateHistory); // 调试用
-  
-  if (!heartRateHistory || heartRateHistory.length === 0) {
-    console.warn('没有心率历史数据');
-    return {
-      duration: Number(route.query.duration || 0),
-      startTime: trainingStore.startTime || new Date().toISOString(),
-      mode: route.params.mode || 'heart-monitoring',
-      averageHeartRate: 0,
-      maxHeartRate: 0,
-      minHeartRate: 0,
-      heartRateZones: {
-        rest: 0,
-        warmUp: 0,
-        fatBurn: 0,
-        cardio: 0,
-        peak: 0
-      },
-      caloriesBurned: 0,
-      heartRateData: []
-    };
-  }
+  const startTime = trainingStore.startTime;
+  const duration = Number(route.query.duration || 0);
   
   // 计算心率统计数据
   const heartRates = heartRateHistory.map(h => h.value);
@@ -46,14 +26,14 @@ const trainingData = computed(() => {
   // 计算心率区间分布
   const zones = calculateHeartRateZones(heartRates);
   
-  // 估算卡路里消耗
+  // 估算卡路里消耗（简单示例，实际应考虑更多因素）
   const caloriesBurned = Math.round(
-    (Number(route.query.duration || 0) * averageHeartRate * 0.14)
+    (duration * averageHeartRate * 0.14)
   );
   
   return {
-    duration: Number(route.query.duration || 0),
-    startTime: trainingStore.startTime || new Date().toISOString(),
+    duration,
+    startTime: startTime || new Date().toISOString(),
     mode: route.params.mode || 'heart-monitoring',
     averageHeartRate,
     maxHeartRate,
@@ -67,34 +47,56 @@ const trainingData = computed(() => {
   };
 });
 
-// 计算训练效果评分（示例算法）
+// 计算心率区间分布
+const calculateHeartRateZones = (heartRates: number[]) => {
+  const maxHR = 220 - 25; // 假设用户25岁，实际应该从用户信息获取
+  const total = heartRates.length;
+  
+  const zones = {
+    rest: 0,      // <60% max HR
+    warmUp: 0,    // 60-70% max HR
+    fatBurn: 0,   // 70-80% max HR
+    cardio: 0,    // 80-90% max HR
+    peak: 0       // >90% max HR
+  };
+  
+  heartRates.forEach(hr => {
+    const percentage = (hr / maxHR) * 100;
+    if (percentage < 60) zones.rest++;
+    else if (percentage < 70) zones.warmUp++;
+    else if (percentage < 80) zones.fatBurn++;
+    else if (percentage < 90) zones.cardio++;
+    else zones.peak++;
+  });
+  
+  // 转换为百分比
+  return {
+    rest: Math.round((zones.rest / total) * 100),
+    warmUp: Math.round((zones.warmUp / total) * 100),
+    fatBurn: Math.round((zones.fatBurn / total) * 100),
+    cardio: Math.round((zones.cardio / total) * 100),
+    peak: Math.round((zones.peak / total) * 100)
+  };
+};
+
+// 训练评分计算（基于实际数据）
 const trainingScore = computed(() => {
   const heartRateData = trainingData.value.heartRateData;
   
-  // 如果没有数据，返回默认值
-  if (!heartRateData || heartRateData.length === 0) {
-    return {
-      overall: 0,
-      stability: 0,
-      intensity: 0,
-      duration: 0
-    };
-  }
-  
-  // 计算心率稳定性
+  // 计算心率稳定性（方差越小越稳定）
   const hrValues = heartRateData.map(h => h.value);
   const hrVariance = calculateVariance(hrValues);
   const stabilityScore = Math.min(100, Math.max(0, 100 - (hrVariance / 2)));
   
-  // 计算训练强度
+  // 计算训练强度（基于目标心率区间的时间）
   const intensityScore = Math.min(100, 
     (trainingData.value.heartRateZones.fatBurn + 
      trainingData.value.heartRateZones.cardio) * 1.2
   );
   
   // 计算时长达标率
-  const targetDuration = Number(route.query.duration || 15) * 60;
-  const actualDuration = heartRateData.length;
+  const targetDuration = Number(route.query.duration || 15) * 60; // 转换为秒
+  const actualDuration = heartRateData.length; // 假设每秒一个数据点
   const durationScore = Math.min(100, (actualDuration / targetDuration) * 100);
   
   // 总体评分
@@ -112,11 +114,14 @@ const trainingScore = computed(() => {
   };
 });
 
-// 生成建议
+// 基于实际数据生成建议
 const recommendations = computed(() => {
   const suggestions = [];
+  const { averageHeartRate, heartRateZones } = trainingData.value;
+  const { stability, intensity } = trainingScore.value;
   
-  if (trainingData.value.averageHeartRate > 85) {
+  // 心率相关建议
+  if (averageHeartRate > 85) {
     suggestions.push({
       type: 'warning',
       title: '心率偏高',
@@ -124,7 +129,32 @@ const recommendations = computed(() => {
     });
   }
   
-  if (trainingData.value.heartRateZones.fatBurn > 30) {
+  // 训练强度建议
+  if (intensity < 60) {
+    suggestions.push({
+      type: 'info',
+      title: '训练强度偏低',
+      content: '为达到更好的训练效果，建议适当提高训练强度。'
+    });
+  } else if (intensity > 90) {
+    suggestions.push({
+      type: 'warning',
+      title: '训练强度较高',
+      content: '注意不要过度训练，建议适当调整强度。'
+    });
+  }
+  
+  // 心率稳定性建议
+  if (stability < 70) {
+    suggestions.push({
+      type: 'info',
+      title: '心率波动较大',
+      content: '建议通过呼吸调节来稳定心率，保持匀速运动。'
+    });
+  }
+  
+  // 燃脂效果建议
+  if (heartRateZones.fatBurn > 30) {
     suggestions.push({
       type: 'success',
       title: '良好的燃脂效果',
@@ -132,15 +162,14 @@ const recommendations = computed(() => {
     });
   }
   
-  // 添加基础建议
-  suggestions.push({
-    type: 'info',
-    title: '训练建议',
-    content: '建议每周进行3-4次类似强度的训练，每次训练时长15-30分钟。'
-  });
-  
   return suggestions;
 });
+
+// 辅助函数：计算方差
+const calculateVariance = (numbers: number[]) => {
+  const mean = numbers.reduce((a, b) => a + b) / numbers.length;
+  return numbers.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numbers.length;
+};
 
 // 初始化图表
 onMounted(() => {
@@ -150,21 +179,7 @@ onMounted(() => {
 
 const initHeartRateChart = () => {
   const chartDom = document.getElementById('heartRateChart');
-  if (!chartDom) return;
-  
   const myChart = echarts.init(chartDom);
-  
-  // 确保有数据
-  if (!trainingData.value.heartRateData.length) {
-    myChart.setOption({
-      title: {
-        text: '暂无心率数据',
-        left: 'center',
-        top: 'center'
-      }
-    });
-    return;
-  }
   
   const option = {
     title: {
@@ -209,21 +224,7 @@ const initHeartRateChart = () => {
 
 const initZonesChart = () => {
   const chartDom = document.getElementById('zonesChart');
-  if (!chartDom) return;
-  
   const myChart = echarts.init(chartDom);
-  
-  // 确保有数据
-  if (!trainingData.value.heartRateData.length) {
-    myChart.setOption({
-      title: {
-        text: '暂无区间数据',
-        left: 'center',
-        top: 'center'
-      }
-    });
-    return;
-  }
   
   const option = {
     title: {
@@ -277,23 +278,6 @@ const backToHome = () => {
 const shareResults = () => {
   ElMessage.success('分享功能开发中...');
 };
-
-// 在组件卸载时清理
-onUnmounted(() => {
-  const heartRateChart = echarts.getInstanceByDom(
-    document.getElementById('heartRateChart')
-  );
-  const zonesChart = echarts.getInstanceByDom(
-    document.getElementById('zonesChart')
-  );
-  
-  if (heartRateChart) {
-    heartRateChart.dispose();
-  }
-  if (zonesChart) {
-    zonesChart.dispose();
-  }
-});
 </script>
 
 <template>

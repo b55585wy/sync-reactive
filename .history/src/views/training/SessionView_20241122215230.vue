@@ -71,7 +71,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import BluetoothService from '@/services/BluetoothService';
-import { ElMessageBox } from 'element-plus';
+import { ElMessageBox, ElMessage } from 'element-plus';
 import { useTrainingStore } from '@/stores/training';
 
 const props = withDefaults(defineProps<{
@@ -133,9 +133,6 @@ const updateHeartRateStats = () => {
     heartRateSum.value += currentRate;
     heartRateCount.value++;
     avgHeartRate.value = Math.round(heartRateSum.value / heartRateCount.value);
-    
-    // 添加到 store
-    trainingStore.addHeartRateRecord(currentRate);
   }
 };
 
@@ -160,9 +157,9 @@ const endSession = async () => {
   
   try {
     await router.push({
-      name: 'TrainingSummary',
+      name: 'Summary',
       query: {
-        duration: elapsedTime.value.toString(),
+        duration: props.duration.toString(),
         mode: props.mode
       }
     });
@@ -174,8 +171,6 @@ const endSession = async () => {
 
 // 生命周期钩子
 onMounted(() => {
-  trainingStore.startTraining();
-  
   // 开始计时
   timer = setInterval(() => {
     elapsedTime.value++;
