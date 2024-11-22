@@ -6,16 +6,16 @@ export const useDeviceStore = defineStore('device', {
     isBreathingBandConnected: false,
     currentHeartRate: 0
   }),
-
+  
   actions: {
     setHeartRateBandConnected(status: boolean) {
       this.isHeartRateBandConnected = status;
     },
-
+    
     setBreathingBandConnected(status: boolean) {
       this.isBreathingBandConnected = status;
     },
-
+    
     setCurrentHeartRate(rate: number) {
       this.currentHeartRate = rate;
     }

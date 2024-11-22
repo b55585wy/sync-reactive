@@ -81,9 +81,14 @@ class BluetoothService {
         this.deviceStore.setHeartRateBandConnected(false)
         this.deviceStore.setCurrentHeartRate(0)
         ElMessage.success('心率带已断开连接')
+        
+        // 更新 store 状态
+        const deviceStore = useDeviceStore()
+        deviceStore.setHeartRateBandConnected(false)
       } catch (error) {
         console.error('断开心率带连接失败:', error)
         ElMessage.error('断开心率带连接失败')
+        throw error
       }
     }
   }
@@ -96,6 +101,7 @@ class BluetoothService {
     return this.heartRate.value
   }
 
+  // 单例模式
   static getInstance() {
     if (!BluetoothService.instance) {
       BluetoothService.instance = new BluetoothService()
