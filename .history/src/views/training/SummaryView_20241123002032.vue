@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted, nextTick, watch } from 'vue';
-import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import * as echarts from 'echarts';
 import { useTrainingStore } from '@/stores/training';
@@ -425,9 +425,10 @@ onMounted(() => {
   }
 });
 
-// 添加路由离开守卫
+// 监听路由返回
 onBeforeRouteLeave((to, from, next) => {
   if (to.path.includes('/training') && !to.path.includes('/summary')) {
+    // 如果试图返回到训练页面，则重定向到主页
     next('/');
   } else {
     next();

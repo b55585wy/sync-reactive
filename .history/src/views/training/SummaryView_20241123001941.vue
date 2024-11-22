@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted, nextTick, watch } from 'vue';
-import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import * as echarts from 'echarts';
 import { useTrainingStore } from '@/stores/training';
@@ -416,23 +416,6 @@ const backToHome = () => {
 const shareResults = () => {
   ElMessage.success('分享功能开发中...');
 };
-
-// 在组件挂载时检查训练状态
-onMounted(() => {
-  if (!trainingStore.heartRateHistory.length) {
-    ElMessage.warning('没有训练数据，返回主页');
-    backToHome();
-  }
-});
-
-// 添加路由离开守卫
-onBeforeRouteLeave((to, from, next) => {
-  if (to.path.includes('/training') && !to.path.includes('/summary')) {
-    next('/');
-  } else {
-    next();
-  }
-});
 </script>
 
 <template>
