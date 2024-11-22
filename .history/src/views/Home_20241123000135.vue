@@ -136,7 +136,7 @@
     <!-- 快速开始按钮 -->
     <div class="quick-start" v-if="canStartTraining">
       <el-button type="primary" round size="large" @click="quickStart">
-        <el-icon><VideoPlay /></el-icon> 快速开始训练
+        <i class="el-icon-video-play"></i> 快速开始训练
       </el-button>
     </div>
 
@@ -188,8 +188,7 @@ import {
   DataLine,
   Trophy,
   Calendar,
-  Setting,
-  VideoPlay
+  Setting
 } from '@element-plus/icons-vue'
 import BluetoothService from '@/services/BluetoothService'
 
@@ -322,7 +321,7 @@ const formatDate = (date) => {
 // 生命周期钩子
 onMounted(async () => {
   try {
-    // 并行加载据
+    // 并行加载数据
     await Promise.all([
       getTodayTrainingMinutes(),
       getStreakDays(),

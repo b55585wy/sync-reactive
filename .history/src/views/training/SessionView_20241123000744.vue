@@ -189,7 +189,6 @@ watch(() => deviceStore.currentHeartRate, (newRate) => {
 
 // 生命周期钩子
 onMounted(() => {
-  // 开始训练
   trainingStore.startTraining();
   
   // 初始化心率数据
@@ -205,8 +204,10 @@ onMounted(() => {
   // 开始计时
   timer = setInterval(() => {
     elapsedTime.value++;
-    if (deviceStore.currentHeartRate > 0) {
-      trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
+    updateHeartRateStats();
+    
+    if (elapsedTime.value >= props.duration * 60) {
+      endSession();
     }
   }, 1000);
 

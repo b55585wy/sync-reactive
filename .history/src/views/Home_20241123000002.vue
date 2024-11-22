@@ -136,7 +136,7 @@
     <!-- 快速开始按钮 -->
     <div class="quick-start" v-if="canStartTraining">
       <el-button type="primary" round size="large" @click="quickStart">
-        <el-icon><VideoPlay /></el-icon> 快速开始训练
+        <i class="el-icon-video-play"></i> 快速开始训练
       </el-button>
     </div>
 
@@ -188,17 +188,13 @@ import {
   DataLine,
   Trophy,
   Calendar,
-  Setting,
-  VideoPlay
+  Setting
 } from '@element-plus/icons-vue'
-import BluetoothService from '@/services/BluetoothService'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const deviceStore = useDeviceStore()
 const trainingStore = useTrainingStore()
-
-const bluetoothService = new BluetoothService()
 
 // 状态变量
 const showModeDialog = ref(false)
@@ -276,24 +272,15 @@ const getGreeting = () => {
 }
 
 const startTraining = (mode) => {
-  if (!deviceStore.hasAnyDeviceConnected) {
-    ElMessage.warning('请先连接设备')
-    return
-  }
-  
-  router.push({
-    path: '/prepare',
-    query: {
-      mode: mode.id,
-      duration: selectedDuration.value
-    }
-  })
+  selectedMode.value = mode
+  showModeDialog.value = true
 }
 
 const quickStart = () => {
-  const mode = availableTrainingModes.value[0] // 使用第一个可用的训练模式
-  if (mode) {
-    startTraining(mode)
+  // 选择第一个可用的训练模式
+  const firstMode = availableTrainingModes.value[0]
+  if (firstMode) {
+    startTraining(firstMode)
   } else {
     ElMessage.warning('请先连接设备')
   }
@@ -322,7 +309,7 @@ const formatDate = (date) => {
 // 生命周期钩子
 onMounted(async () => {
   try {
-    // 并行加载据
+    // 并行加载数据
     await Promise.all([
       getTodayTrainingMinutes(),
       getStreakDays(),
@@ -375,19 +362,12 @@ const loadRecentTrainings = async () => {
   recentTrainings.value = await trainingStore.getRecentTrainings()
 }
 
-// 处理设备连接点击
-const handleDeviceClick = async (deviceType) => {
-  try {
-    if (deviceType === 'heartRate') {
-      if (!deviceStore.isHeartRateBandConnected) {
-        await bluetoothService.connectHeartRateBand()
-      }
-    } else if (deviceType === 'breathing') {
-      // 处理呼吸带连接
-      // await bluetoothService.connectBreathingBand()
-    }
-  } catch (error) {
-    ElMessage.error('连接失败: ' + error.message)
+// 添加设备点击处理函数
+const handleDeviceClick = (deviceType) => {
+  if (deviceType === 'heartRate' && !deviceStore.isHeartRateBandConnected) {
+    router.push('/prepare/devices')
+  } else if (deviceType === 'breathing' && !deviceStore.isBreathingBandConnected) {
+    router.push('/prepare/devices')
   }
 }
 </script>
