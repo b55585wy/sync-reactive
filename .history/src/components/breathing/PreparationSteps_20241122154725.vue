@@ -99,20 +99,16 @@ import { ref,computed, onMounted } from 'vue';
 import { useDeviceStore } from '@/stores/device';
 import { useRouter, useRoute } from 'vue-router';
 import { IconBreathing, IconHeart, IconAnalysis, IconAdvanced } from '@/assets/icons';
-import BluetoothService from '@/services/BluetoothService';
+import bluetoothService from '@/services/BluetoothService';
 import { on } from 'events';
-import { ElMessage } from 'element-plus';
 const router = useRouter();
 const route = useRoute();
 const deviceStore = useDeviceStore();
-
-const bluetoothService = new BluetoothService();
 
 // 使用 deviceStore 中的状态替代本地 ref
 const isBreathingBandConnected = computed(() => deviceStore.isBreathingBandConnected);
 const isHeartRateBandConnected = computed(() => deviceStore.isHeartRateBandConnected);
 const currentMode = ref<'breathing' | 'heartRate' | 'combined' | null>(null);
-const isConnecting = ref(false);
 
 onMounted(() => {
   if (route.query.mode) {
@@ -148,28 +144,31 @@ const availableFeatures = computed(() => {
 
 // 连接设备方法
 const connectDevice = async (type: 'breathing' | 'heartRate') => {
-  if (isConnecting.value) return;
-  
-  isConnecting.value = true;
   try {
-    if (type === 'heartRate') {
-      if (deviceStore.isHeartRateBandConnected) {
-        await bluetoothService.disconnectHeartRateBand();
-      } else {
-        await bluetoothService.connectHeartRateBand();
-      }
-    } else if (type === 'breathing') {
-      if (deviceStore.isBreathingBandConnected) {
+    if (type === 'breathing') {
+      if (isBreathingBandConnected.value) {
+        // 断开连接
         await bluetoothService.disconnectBreathingBand();
+        deviceStore.setBreathingBandConnected(false);
       } else {
+        // 连接设备
         await bluetoothService.connectBreathingBand();
+        deviceStore.setBreathingBandConnected(true);
+      }
+    } else {
+      if (isHeartRateBandConnected.value) {
+        // 断开连接
+        await bluetoothService.disconnectHeartRateBand();
+        deviceStore.setHeartRateBandConnected(false);
+      } else {
+        // 连接设备
+        await bluetoothService.connectHeartRateBand();
+        deviceStore.setHeartRateBandConnected(true);
       }
     }
   } catch (error) {
     console.error('设备连接/断开失败:', error);
-    ElMessage.error('设备操作失败');
-  } finally {
-    isConnecting.value = false;
+    // 可以添加错误提示
   }
 };
 

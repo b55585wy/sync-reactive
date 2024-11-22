@@ -99,20 +99,15 @@ import { ref,computed, onMounted } from 'vue';
 import { useDeviceStore } from '@/stores/device';
 import { useRouter, useRoute } from 'vue-router';
 import { IconBreathing, IconHeart, IconAnalysis, IconAdvanced } from '@/assets/icons';
-import BluetoothService from '@/services/BluetoothService';
+import bluetoothService from '@/services/BluetoothService';
 import { on } from 'events';
-import { ElMessage } from 'element-plus';
 const router = useRouter();
-const route = useRoute();
 const deviceStore = useDeviceStore();
-
-const bluetoothService = new BluetoothService();
 
 // 使用 deviceStore 中的状态替代本地 ref
 const isBreathingBandConnected = computed(() => deviceStore.isBreathingBandConnected);
 const isHeartRateBandConnected = computed(() => deviceStore.isHeartRateBandConnected);
 const currentMode = ref<'breathing' | 'heartRate' | 'combined' | null>(null);
-const isConnecting = ref(false);
 
 onMounted(() => {
   if (route.query.mode) {
@@ -148,28 +143,18 @@ const availableFeatures = computed(() => {
 
 // 连接设备方法
 const connectDevice = async (type: 'breathing' | 'heartRate') => {
-  if (isConnecting.value) return;
-  
-  isConnecting.value = true;
-  try {
-    if (type === 'heartRate') {
-      if (deviceStore.isHeartRateBandConnected) {
-        await bluetoothService.disconnectHeartRateBand();
-      } else {
-        await bluetoothService.connectHeartRateBand();
-      }
-    } else if (type === 'breathing') {
-      if (deviceStore.isBreathingBandConnected) {
-        await bluetoothService.disconnectBreathingBand();
-      } else {
-        await bluetoothService.connectBreathingBand();
-      }
+  if (type === 'breathing') {
+    if (isBreathingBandConnected.value) {
+      await deviceStore.disconnectBreathingBand();
+    } else {
+      await deviceStore.connectBreathingBand();
     }
-  } catch (error) {
-    console.error('设备连接/断开失败:', error);
-    ElMessage.error('设备操作失败');
-  } finally {
-    isConnecting.value = false;
+  } else {
+    if (isHeartRateBandConnected.value) {
+      await deviceStore.disconnectHeartRateBand();
+    } else {
+      await deviceStore.connectHeartRateBand();
+    }
   }
 };
 
@@ -187,12 +172,6 @@ const getDeviceTips = computed(() => {
 
 // 判断是否可以开始训练
 const canStartTraining = computed(() => {
-  console.log('检查是否可以开始训练:', {
-    currentMode: currentMode.value,
-    isBreathingBandConnected: isBreathingBandConnected.value,
-    isHeartRateBandConnected: isHeartRateBandConnected.value
-  });
-  
   if (currentMode.value === 'breathing') {
     return isBreathingBandConnected.value;
   } else if (currentMode.value === 'heartRate') {
@@ -216,23 +195,19 @@ const getStartWarningText = computed(() => {
 });
 
 // 开始训练
-const startTraining = async () => {
-  if (!canStartTraining.value) {
-    console.log('无法开始训练，条件不满足');
-    return;
-  }
+const startTraining = () => {
+  if (!canStartTraining.value) return;
   
-  try {
-    // 根据不同的设备组合跳转到相应的训练模式
-    if (isBreathingBandConnected.value && isHeartRateBandConnected.value) {
-      await router.push('/training/combined');
-    } else if (isBreathingBandConnected.value) {
-      await router.push('/training/breathing');
-    } else if (isHeartRateBandConnected.value) {
-      await router.push('/training/heart-rate');
-    }
-  } catch (error) {
-    console.error('跳转失败:', error);
+  // 根据不同的设备组合跳转到相应的训练模式
+  if (isBreathingBandConnected.value && isHeartRateBandConnected.value) {
+    // 跳转到综合训练页面
+    router.push('/training/combined');
+  } else if (isBreathingBandConnected.value) {
+    // 跳转到呼吸训练页面
+    router.push('/training/breathing');
+  } else if (isHeartRateBandConnected.value) {
+    // 跳转到心率训练页面
+    router.push('/training/heart-rate');
   }
 };
 

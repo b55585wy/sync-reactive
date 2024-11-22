@@ -99,14 +99,12 @@ import { ref,computed, onMounted } from 'vue';
 import { useDeviceStore } from '@/stores/device';
 import { useRouter, useRoute } from 'vue-router';
 import { IconBreathing, IconHeart, IconAnalysis, IconAdvanced } from '@/assets/icons';
-import BluetoothService from '@/services/BluetoothService';
+import bluetoothService from '@/services/BluetoothService';
 import { on } from 'events';
 import { ElMessage } from 'element-plus';
 const router = useRouter();
 const route = useRoute();
 const deviceStore = useDeviceStore();
-
-const bluetoothService = new BluetoothService();
 
 // 使用 deviceStore 中的状态替代本地 ref
 const isBreathingBandConnected = computed(() => deviceStore.isBreathingBandConnected);

@@ -52,7 +52,7 @@ const routes = [
   },
   {
     path: '/training',
-    component: () => import('@/views/training/TrainingView.vue'),
+    component: () => import('@/views/training/TrainingLayout.vue'),
     children: [
       {
         path: 'prepare',

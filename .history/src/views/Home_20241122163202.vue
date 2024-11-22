@@ -37,7 +37,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BluetoothService  from '@/services/BluetoothService.js'
@@ -45,42 +45,75 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 
 console.log('Imports loaded')
 
-const router = useRouter()
-const username = ref('用户')
-const todayMinutes = ref(0)
-const streakDays = ref(0)
-const bluetoothService = new BluetoothService()
+export default {
+  name: 'Home',
+  setup() {
+    console.log('Home component setup started')
+    
+    const router = useRouter()
+    const username = ref('用户')
+    const todayMinutes = ref(0)
+    const streakDays = ref(0)
+    const bluetoothService = BluetoothService.getInstance()
 
-const quickActions = ref([
-  { id: 'guide', name: '训练指南', icon: 'fas fa-book' },
-  { id: 'stats', name: '统计数据', icon: 'fas fa-chart-bar' },
-  { id: 'settings', name: '设置', icon: 'fas fa-cog' }
-])
+    const quickActions = ref([
+      { id: 'guide', name: '训练指南', icon: 'fas fa-book' },
+      { id: 'stats', name: '统计数据', icon: 'fas fa-chart-bar' },
+      { id: 'settings', name: '设置', icon: 'fas fa-cog' }
+    ])
 
-console.log('Data initialized')
+    console.log('Data initialized')
 
-const startExercise = async () => {
-  try {
-    const connected = await bluetoothService.connectHeartRateBand()
-    if (connected) {
-      ElMessage.success('设备连接成功')
-      router.push('/prepare')
+    const startExercise = async () => {
+      try {
+        // 检查蓝牙连接状态
+        if (!bluetoothService.getConnectionStatus()) {
+          if (window.confirm('设备未连接，是否现在连接设备？')) {
+            try {
+              // 调用连接心率带的方法
+              await bluetoothService.connectHeartRateBelt()
+              console.log('设备连接成功')
+              // 连接成功后，继续导航到准备页面
+              router.push('/prepare')
+            } catch (error) {
+              console.error('设备连接失败:', error)
+              alert('设备连接失败，请重试')
+            }
+            return
+          }
+          return
+        }
+        
+        // 如果已经连接，直接导航到准备页面
+        router.push('/prepare')
+      } catch (error) {
+        console.error('启动失败:', error)
+        alert('启动失败')
+      }
     }
-  } catch (error) {
-    console.error('设备连接失败:', error)
-    ElMessage.error('设备连接失败')
+
+    const handleAction = (actionId) => {
+      console.log('Action clicked:', actionId)
+      //跳转到设置界面
+      if(actionId=='settings'){
+        router.push('/Settings')
+        return
+      }
+    }
+
+    
+    
+
+    return {
+      username,
+      todayMinutes,
+      streakDays,
+      quickActions,
+      startExercise,
+      handleAction
+    }
   }
 }
-
-const handleAction = (actionId) => {
-  console.log('Action clicked:', actionId)
-  //跳转到设置界面
-  if(actionId=='settings'){
-    router.push('/Settings')
-    return
-  }
-}
-
 </script>
 
 <style scoped>

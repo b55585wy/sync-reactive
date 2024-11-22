@@ -51,25 +51,25 @@ const routes = [
     // 还需要配置参数比如设置界面返回的用户信息
   },
   {
-    path: '/training',
-    component: () => import('@/views/training/TrainingView.vue'),
-    children: [
-      {
-        path: 'prepare',
-        name: 'TrainingPrepare',
-        component: () => import('@/views/training/PrepareView.vue'),
-      },
-      {
-        path: 'session',
-        name: 'TrainingSession',
-        component: () => import('@/views/training/SessionView.vue'),
-        props: route => ({
-          mode: route.query.mode,
-          duration: Number(route.query.duration) || 3
-        })
-      }
-    ]
-  }
+      path: '/training',
+      component: () => import('@/views/training/TrainingLayout.vue'),
+      children: [
+        {
+          path: 'prepare',
+          name: 'TrainingPrepare',
+          component: () => import('@/views/training/PrepareView.vue'),
+        },
+        {
+          path: 'session',
+          name: 'TrainingSession',
+          component: () => import('@/views/training/SessionView.vue'),
+          props: route => ({
+            mode: route.query.mode,
+            duration: Number(route.query.duration) || 3
+          })
+        }
+      ]
+    }
 ];
 
 export default createRouter({
