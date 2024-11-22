@@ -142,13 +142,12 @@ const trainingScore = computed(() => {
   );
   
   // 计算时长达标率
-  const targetDuration = Number(route.query.targetDuration || 0); // 目标时长（秒）
+  const targetDuration = Number(route.query.duration || 15); // 目标时长（秒）
   const actualDuration = Number(route.query.duration || 0); // 实际时长（秒）
   
-  let durationScore = 0;
-  if (targetDuration > 0) {
-    durationScore = Math.min(100, (actualDuration / targetDuration) * 100);
-  }
+  // 如果目标时长为0，则达标率为0
+  const durationScore = targetDuration === 0 ? 0 : 
+    Math.min(100, (actualDuration / targetDuration) * 100);
   
   // 总体评分
   const overall = Math.round(

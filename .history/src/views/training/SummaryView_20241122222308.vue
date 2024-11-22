@@ -142,13 +142,12 @@ const trainingScore = computed(() => {
   );
   
   // 计算时长达标率
-  const targetDuration = Number(route.query.targetDuration || 0); // 目标时长（秒）
+  const targetDuration = Number(route.query.duration || 15); // 目标时长（秒）
   const actualDuration = Number(route.query.duration || 0); // 实际时长（秒）
   
-  let durationScore = 0;
-  if (targetDuration > 0) {
-    durationScore = Math.min(100, (actualDuration / targetDuration) * 100);
-  }
+  // 如果目标时长为0，则达标率为0
+  const durationScore = targetDuration === 0 ? 0 : 
+    Math.min(100, (actualDuration / targetDuration) * 100);
   
   // 总体评分
   const overall = Math.round(
@@ -210,8 +209,8 @@ const updateHeartRateChart = () => {
     record.value
   ]);
 
-  // 计算训练总时长（秒）
-  const durationInSeconds = trainingData.value.duration * 60;
+  // 计算训练总时长（分钟）
+  const durationInMinutes = trainingData.value.duration;
 
   const option = {
     title: {
@@ -230,30 +229,19 @@ const updateHeartRateChart = () => {
       type: 'time',
       axisLabel: {
         formatter: (value: number) => {
-          const date = new Date(value);
-          // 根据训练时长调整显示格式
-          if (durationInSeconds <= 60) { // 1分钟以内
-            return date.toLocaleTimeString('zh-CN', {
-              minute: '2-digit',
-              second: '2-digit'
-            });
-          } else if (durationInSeconds <= 300) { // 5分钟以内
-            return date.toLocaleTimeString('zh-CN', {
-              minute: '2-digit',
-              second: '2-digit'
-            });
-          } else { // 5分钟以上
-            return date.toLocaleTimeString('zh-CN', {
+          // 如果训练时长大于3分钟，只显示时:分
+          if (durationInMinutes > 1) {
+            return new Date(value).toLocaleTimeString('zh-CN', {
               hour: '2-digit',
               minute: '2-digit'
             });
           }
-        },
-        // 添加标签间隔设置
-        interval: (index: number, value: number) => {
-          if (durationInSeconds <= 60) return true; // 1分钟内显示所有点
-          if (durationInSeconds <= 300) return index % 3 === 0; // 5分钟内每3个点显示1个
-          return index % 5 === 0; // 5分钟以上每5个点显示1个
+          // 否则显示时:分:秒
+          return new Date(value).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
         }
       }
     },

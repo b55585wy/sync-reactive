@@ -159,8 +159,7 @@ const confirmEndSession = async () => {
     await router.push({
       name: 'TrainingSummary',
       query: {
-        duration: String(elapsedTime.value),      // 实际训练时长（秒）
-        targetDuration: String(props.duration * 60), // 目标训练时长（秒）
+        duration: String(elapsedTime.value),  // 使用实际经过的时间
         mode: props.mode
       }
     });
