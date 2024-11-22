@@ -476,6 +476,4 @@ button:hover {
   margin-left: 8px;
   padding: 8px;
   border-radius: 4px;
-  border: 1px solid #ddd;
-}
 </style> 

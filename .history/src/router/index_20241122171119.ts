@@ -60,18 +60,13 @@ const routes = [
         component: () => import('@/views/training/PrepareView.vue'),
       },
       {
-        path: 'session/:mode',
+        path: 'session',
         name: 'TrainingSession',
         component: () => import('@/views/training/SessionView.vue'),
         props: route => ({
-          mode: route.params.mode,
+          mode: route.query.mode,
           duration: Number(route.query.duration) || 3
         })
-      },
-      {
-        path: 'summary',
-        name: 'TrainingSummary',
-        component: () => import('@/views/training/SummaryView.vue')
       }
     ]
   }

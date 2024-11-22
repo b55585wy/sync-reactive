@@ -78,16 +78,6 @@
 
         <!-- 开始训练按钮 -->
         <div class="action-area">
-          <div class="duration-selector">
-            <label>训练时长（分钟）：</label>
-            <select v-model="selectedDuration">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-              <option value="30">30</option>
-            </select>
-          </div>
           <button 
             class="btn-start" 
             :disabled="!canStartTraining"
@@ -466,16 +456,5 @@ button:hover {
 .device-tips {
   color: #666;
   font-size: 14px;
-}
-
-.duration-selector {
-  margin-bottom: 16px;
-}
-
-.duration-selector select {
-  margin-left: 8px;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
 }
 </style> 

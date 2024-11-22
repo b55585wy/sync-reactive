@@ -51,10 +51,7 @@
             </div>
             <button 
               @click="connectDevice('heartRate')"
-              :class="{ 
-                'btn-connected': isHeartRateBandConnected,
-                'btn-disconnect': !isHeartRateBandConnected 
-              }"
+              :class="{ 'btn-connected': isHeartRateBandConnected }"
             >
               {{ isHeartRateBandConnected ? '断开连接' : '连接设备' }}
             </button>
@@ -78,16 +75,6 @@
 
         <!-- 开始训练按钮 -->
         <div class="action-area">
-          <div class="duration-selector">
-            <label>训练时长（分钟）：</label>
-            <select v-model="selectedDuration">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-              <option value="30">30</option>
-            </select>
-          </div>
           <button 
             class="btn-start" 
             :disabled="!canStartTraining"
@@ -228,10 +215,7 @@ const getStartWarningText = computed(() => {
   return '请连接至少一个设备';
 });
 
-// 添加 selectedDuration ref
-const selectedDuration = ref(15); // 默认15分钟
-
-// 修改 startTraining 方法
+// 开始训练
 const startTraining = async () => {
   if (!canStartTraining.value) return;
   
@@ -241,7 +225,7 @@ const startTraining = async () => {
       await router.push({
         name: 'TrainingSession',
         params: { mode: currentMode.value || 'heartRate' },
-        query: { duration: selectedDuration.value.toString() }  // 转换为字符串
+        query: { duration: selectedDuration.value }
       });
       return;
     }
@@ -252,7 +236,7 @@ const startTraining = async () => {
       await router.push({
         name: 'TrainingSession',
         params: { mode: currentMode.value || 'heartRate' },
-        query: { duration: selectedDuration.value.toString() }  // 转换为字符串
+        query: { duration: selectedDuration.value }
       });
     }
   } catch (error) {
@@ -414,30 +398,21 @@ button {
   font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: #f0f2f5;
-  color: #666;
+  background: #4CAF50;
+  color: white;
 }
 
 button:hover {
-  background: #e8eaed;
+  background: #43A047;
 }
 
 .btn-connected {
-  background: #4CAF50 !important;
-  color: white !important;
+  background: #4CAF50;
+  color: white;
 }
 
 .btn-connected:hover {
-  background: #43A047 !important;
-}
-
-.btn-disconnect {
-  background: #f0f2f5 !important;
-  color: #666 !important;
-}
-
-.btn-disconnect:hover {
-  background: #e8eaed !important;
+  background: #43A047;
 }
 
 .action-area {
@@ -468,14 +443,13 @@ button:hover {
   font-size: 14px;
 }
 
-.duration-selector {
-  margin-bottom: 16px;
+/* 当设备未连接时的按钮样式 */
+.device-card:not(.connected) button {
+  background: #f0f2f5;
+  color: #666;
 }
 
-.duration-selector select {
-  margin-left: 8px;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+.device-card:not(.connected) button:hover {
+  background: #e8eaed;
 }
 </style> 

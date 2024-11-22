@@ -79,15 +79,14 @@ class BluetoothService {
   }
 
   async disconnectHeartRateBand() {
-    const deviceStore = this.getDeviceStore()
     if (this.device.value?.gatt?.connected) {
       try {
         await this.device.value.gatt.disconnect()
         this.device.value = null
         this.heartRate.value = 0
         this.isConnected.value = false
-        deviceStore.setHeartRateBandConnected(false)
-        deviceStore.setCurrentHeartRate(0)
+        this.deviceStore.setHeartRateBandConnected(false)
+        this.deviceStore.setCurrentHeartRate(0)
         ElMessage.success('心率带已断开连接')
       } catch (error) {
         console.error('断开心率带连接失败:', error)
