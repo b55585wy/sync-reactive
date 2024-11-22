@@ -3,7 +3,7 @@
     <header class="header">
       <h1>呼吸训练</h1>
       <div class="user-info">
-        <span>欢迎, {{ settingsStore.username || '用户' }}</span>
+        <span>欢迎, {{ username }}</span>
       </div>
     </header>
 
@@ -38,25 +38,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BluetoothService  from '@/services/BluetoothService.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { useSettingsStore } from '@/stores/settings'
 
 console.log('Imports loaded')
 
 const router = useRouter()
-const settingsStore = useSettingsStore()
-
-// 移除原来的 username ref
-// const username = ref('用户')
-
-// 在组件挂载时加载设置
-onMounted(async () => {
-  await settingsStore.getSettings()
-})
-
+const username = ref('用户')
 const todayMinutes = ref(0)
 const streakDays = ref(0)
 const bluetoothService = new BluetoothService()

@@ -7,6 +7,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import { useSettingsStore } from '@/stores/settings' // 添加这行导入
 
 // 将 store 初始化移到 onMounted 中
 onMounted(async () => {

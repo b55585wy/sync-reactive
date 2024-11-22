@@ -34,6 +34,11 @@ const routes = [
     },
     children: [
       {
+        path: 'prepare',
+        name: 'TrainingPrepare',
+        component: () => import('@/views/training/PrepareView.vue'),
+      },
+      {
         path: 'session/:mode',
         name: 'TrainingSession',
         component: () => import('@/views/training/SessionView.vue'),

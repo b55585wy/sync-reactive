@@ -4,15 +4,17 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script>
 import { onMounted } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+const settingsStore = useSettingsStore()
 
-// 将 store 初始化移到 onMounted 中
 onMounted(async () => {
-  const settingsStore = useSettingsStore()
   await settingsStore.initializeSettings()
 })
+export default {
+  name: 'App'
+}
 </script>
 
 <style>
