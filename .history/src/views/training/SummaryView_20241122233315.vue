@@ -4,12 +4,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import * as echarts from 'echarts';
 import { useTrainingStore } from '@/stores/training';
-import { useSettingsStore } from '@/stores/settings';
 
 const route = useRoute();
 const router = useRouter();
 const trainingStore = useTrainingStore();
-const settingsStore = useSettingsStore();
 
 // 计算心率区间的函数
 const calculateHeartRateZones = (heartRates: number[]) => {
@@ -22,7 +20,7 @@ const calculateHeartRateZones = (heartRates: number[]) => {
   };
 
   // 假设最大心率为 220 - 年龄（这里假设 30 岁）
-  const maxHR = 220 - settingsStore.age;
+  const maxHR = 190;
   
   let zones = {
     rest: 0,   // < 60% max HR

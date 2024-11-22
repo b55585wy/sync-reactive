@@ -1,10 +1,12 @@
 <template>
   <div class="settings-container">
+    <!-- 设置页面标题 -->
     <header class="settings-header">
       <h1>设置</h1>
       <p class="subtitle">个性化您的训练体验</p>
     </header>
 
+    <!-- 设置内容区域 -->
     <main class="settings-content">
       <!-- 个人信息设置 -->
       <section class="settings-section">
@@ -12,13 +14,13 @@
         <div class="settings-card">
           <div class="form-group">
             <label>用户名</label>
-            <el-input v-model="tempSettings.username" placeholder="请输入用户名" />
+            <el-input v-model="settings.username" placeholder="请输入用户名" />
           </div>
           
           <div class="form-group">
             <label>年龄</label>
             <el-input-number 
-              v-model="tempSettings.age" 
+              v-model="settings.age" 
               :min="12" 
               :max="100"
               placeholder="请输入年龄"
@@ -27,7 +29,7 @@
           
           <div class="form-group">
             <label>性别</label>
-            <el-radio-group v-model="tempSettings.gender">
+            <el-radio-group v-model="settings.gender">
               <el-radio label="male">男</el-radio>
               <el-radio label="female">女</el-radio>
               <el-radio label="other">其他</el-radio>
@@ -37,7 +39,7 @@
           <div class="form-group">
             <label>身高 (cm)</label>
             <el-input-number 
-              v-model="tempSettings.height" 
+              v-model="settings.height" 
               :min="100" 
               :max="250"
               placeholder="请输入身高"
@@ -47,7 +49,7 @@
           <div class="form-group">
             <label>体重 (kg)</label>
             <el-input-number 
-              v-model="tempSettings.weight" 
+              v-model="settings.weight" 
               :min="30" 
               :max="200"
               placeholder="请输入体重"
@@ -62,7 +64,7 @@
         <div class="settings-card">
           <div class="form-group">
             <label>默认训练时长 (分钟)</label>
-            <el-select v-model="tempSettings.defaultDuration">
+            <el-select v-model="settings.defaultDuration">
               <el-option v-for="duration in [3, 5, 10, 15, 20]" 
                         :key="duration" 
                         :label="`${duration}分钟`" 
@@ -72,7 +74,7 @@
           
           <div class="form-group">
             <label>训练难度</label>
-            <el-select v-model="tempSettings.difficulty">
+            <el-select v-model="settings.difficulty">
               <el-option label="初学者" value="beginner" />
               <el-option label="中级" value="intermediate" />
               <el-option label="高级" value="advanced" />
@@ -81,7 +83,7 @@
           
           <div class="form-group">
             <label>训练目标</label>
-            <el-select v-model="tempSettings.goal" multiple>
+            <el-select v-model="settings.goal" multiple>
               <el-option label="减压放松" value="relaxation" />
               <el-option label="提高专注力" value="focus" />
               <el-option label="改善睡眠" value="sleep" />
@@ -93,12 +95,12 @@
             <label>提醒设置</label>
             <div class="reminder-settings">
               <el-switch
-                v-model="tempSettings.enableReminders"
+                v-model="settings.enableReminders"
                 active-text="开启每日提醒"
               />
               <el-time-picker
-                v-if="tempSettings.enableReminders"
-                v-model="tempSettings.reminderTime"
+                v-if="settings.enableReminders"
+                v-model="settings.reminderTime"
                 format="HH:mm"
                 placeholder="选择提醒时间"
               />
@@ -144,7 +146,7 @@
         <div class="settings-card">
           <div class="form-group">
             <label>语言</label>
-            <el-select v-model="tempSettings.language">
+            <el-select v-model="settings.language">
               <el-option label="简体中文" value="zh-CN" />
               <el-option label="English" value="en-US" />
             </el-select>
@@ -152,7 +154,7 @@
           
           <div class="form-group">
             <label>主题</label>
-            <el-radio-group v-model="tempSettings.theme">
+            <el-radio-group v-model="settings.theme">
               <el-radio label="light">浅色</el-radio>
               <el-radio label="dark">深色</el-radio>
               <el-radio label="auto">跟随系统</el-radio>
@@ -163,11 +165,11 @@
             <label>数据同步</label>
             <div class="sync-settings">
               <el-switch
-                v-model="tempSettings.autoSync"
+                v-model="settings.autoSync"
                 active-text="自动同步数据"
               />
               <el-button 
-                v-if="!tempSettings.autoSync"
+                v-if="!settings.autoSync"
                 @click="syncData" 
                 :loading="isSyncing"
               >
@@ -177,38 +179,39 @@
           </div>
         </div>
       </section>
-
-      <!-- 底部操作按钮 -->
-      <div class="settings-actions">
-        <el-button @click="cancelChanges">取消</el-button>
-        <el-button type="primary" @click="saveChanges">保存</el-button>
-      </div>
     </main>
+
+    <!-- 底部保存按钮 -->
+    <footer class="settings-footer">
+      <el-button type="primary" @click="saveSettings" :loading="isSaving">
+        保存设置
+      </el-button>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useSettingsStore } from '@/stores/settings'
 import { useDeviceStore } from '@/stores/deviceStore'
 import BluetoothService from '@/services/BluetoothService'
-import { ElMessage, ElMessageBox } from 'element-plus'
 
-const router = useRouter()
 const settingsStore = useSettingsStore()
 const deviceStore = useDeviceStore()
 const bluetoothService = new BluetoothService()
 const isSaving = ref(false)
 const isSyncing = ref(false)
 
-// 创建临时设置对象
-const tempSettings = ref({
+// 设置数据
+const settings = ref({
+  // 个人信息
   username: '',
   age: 25,
   gender: 'male',
   height: 170,
   weight: 65,
+  
   // 训练偏好
   defaultDuration: 5,
   difficulty: 'beginner',
@@ -222,34 +225,22 @@ const tempSettings = ref({
   autoSync: true
 })
 
-// 初始化临时设置
+// 初始化设置
 onMounted(async () => {
-  const currentSettings = await settingsStore.getSettings()
-  tempSettings.value = { ...currentSettings }
+  const savedSettings = await settingsStore.getSettings()
+  if (savedSettings) {
+    settings.value = { ...settings.value, ...savedSettings }
+  }
 })
 
-// 取消修改
-const cancelChanges = () => {
-  ElMessageBox.confirm('确定要放弃修改吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    router.back() // 或者重置为原始值
-  }).catch(() => {
-    // 用户取消操作
-  })
-}
-
-// 保存修改
-const saveChanges = async () => {
+// 保存设置
+const saveSettings = async () => {
   try {
     isSaving.value = true
-    await settingsStore.saveSettings(tempSettings.value)
+    await settingsStore.saveSettings(settings.value)
     ElMessage.success('设置保存成功')
-    router.back() // 返回上一页
   } catch (error) {
-    ElMessage.error('保存失败：' + error.message)
+    ElMessage.error('保存设置失败')
   } finally {
     isSaving.value = false
   }
@@ -299,20 +290,25 @@ const formatTime = (time) => {
 
 <style scoped>
 .settings-container {
-  padding: 24px;
   max-width: 800px;
   margin: 0 auto;
+  padding: 24px;
 }
 
 .settings-header {
   margin-bottom: 32px;
+  text-align: center;
 }
 
-.settings-actions {
-  margin-top: 32px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
+.settings-header h1 {
+  font-size: 28px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 16px;
 }
 
 .settings-section {
@@ -384,6 +380,11 @@ const formatTime = (time) => {
   margin: 4px 0 0;
   color: #666;
   font-size: 14px;
+}
+
+.settings-footer {
+  margin-top: 32px;
+  text-align: center;
 }
 
 /* 响应式调整 */

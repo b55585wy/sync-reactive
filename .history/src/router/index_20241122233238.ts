@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useDeviceStore } from '@/stores/device';
-import { useTrainingStore } from '@/stores/training';
+import { useDeviceStore } from '../stores/deviceStore';
+import { useTrainingStore } from '../stores/trainingStore';
 
 const router = createRouter({
   history: createWebHistory(),
