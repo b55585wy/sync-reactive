@@ -9,69 +9,17 @@ const route = useRoute();
 const router = useRouter();
 const trainingStore = useTrainingStore();
 
-// 计算心率区间的函数
-const calculateHeartRateZones = (heartRates: number[]) => {
-  if (!heartRates.length) return {
-    rest: 0,
-    warmUp: 0,
-    fatBurn: 0,
-    cardio: 0,
-    peak: 0
-  };
-
-  // 假设最大心率为 220 - 年龄（这里假设 30 岁）
-  const maxHR = 190;
-  
-  let zones = {
-    rest: 0,   // < 60% max HR
-    warmUp: 0, // 60-70% max HR
-    fatBurn: 0,// 70-80% max HR
-    cardio: 0, // 80-90% max HR
-    peak: 0    // 90-100% max HR
-  };
-
-  heartRates.forEach(hr => {
-    const percentage = (hr / maxHR) * 100;
-    if (percentage < 60) zones.rest++;
-    else if (percentage < 70) zones.warmUp++;
-    else if (percentage < 80) zones.fatBurn++;
-    else if (percentage < 90) zones.cardio++;
-    else zones.peak++;
-  });
-
-  // 转换为百分比
-  const total = heartRates.length;
-  return {
-    rest: Math.round((zones.rest / total) * 100),
-    warmUp: Math.round((zones.warmUp / total) * 100),
-    fatBurn: Math.round((zones.fatBurn / total) * 100),
-    cardio: Math.round((zones.cardio / total) * 100),
-    peak: Math.round((zones.peak / total) * 100)
-  };
-};
-
-// 计算方差的辅助函数
-const calculateVariance = (numbers: number[]) => {
-  if (!numbers.length) return 0;
-  const mean = numbers.reduce((a, b) => a + b, 0) / numbers.length;
-  const squareDiffs = numbers.map(value => {
-    const diff = value - mean;
-    return diff * diff;
-  });
-  return Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / numbers.length);
-};
-
 // 训练数据
 const trainingData = computed(() => {
   const heartRateHistory = trainingStore.heartRateHistory;
-  console.log('心率历史数据:', heartRateHistory);
+  console.log('心率历史数据:', heartRateHistory); // 调试用
   
   if (!heartRateHistory || heartRateHistory.length === 0) {
     console.warn('没有心率历史数据');
     return {
-      duration: Math.round(Number(route.query.duration || 0) / 60),
+      duration: Number(route.query.duration || 0),
       startTime: trainingStore.startTime || new Date().toISOString(),
-      mode: route.query.mode || 'heart-monitoring',
+      mode: route.params.mode || 'heart-monitoring',
       averageHeartRate: 0,
       maxHeartRate: 0,
       minHeartRate: 0,
@@ -98,21 +46,24 @@ const trainingData = computed(() => {
   // 计算心率区间分布
   const zones = calculateHeartRateZones(heartRates);
   
-  // 估算卡路里消耗 (简单估算，注意 duration 现在是秒)
+  // 估算卡路里消耗
   const caloriesBurned = Math.round(
-    (Number(route.query.duration || 0) / 60 * averageHeartRate * 0.14)
+    (Number(route.query.duration || 0) * averageHeartRate * 0.14)
   );
   
   return {
-    duration: Math.round(Number(route.query.duration || 0) / 60),
+    duration: Number(route.query.duration || 0),
     startTime: trainingStore.startTime || new Date().toISOString(),
-    mode: route.query.mode || 'heart-monitoring',
+    mode: route.params.mode || 'heart-monitoring',
     averageHeartRate,
     maxHeartRate,
     minHeartRate,
     heartRateZones: zones,
     caloriesBurned,
-    heartRateData: heartRateHistory
+    heartRateData: heartRateHistory.map(h => ({
+      value: h.value,
+      timestamp: h.timestamp
+    }))
   };
 });
 
@@ -141,8 +92,8 @@ const trainingScore = computed(() => {
      trainingData.value.heartRateZones.cardio) * 1.2
   );
   
-  // 计算时长达标率 (duration 现在是秒)
-  const targetDuration = Number(route.query.duration || 15);
+  // 计算时长达标率
+  const targetDuration = Number(route.query.duration || 15) * 60;
   const actualDuration = heartRateData.length;
   const durationScore = Math.min(100, (actualDuration / targetDuration) * 100);
   
@@ -191,143 +142,20 @@ const recommendations = computed(() => {
   return suggestions;
 });
 
-// 图表相关代码
 const heartRateChart = ref<echarts.ECharts | null>(null);
 const zonesChart = ref<echarts.ECharts | null>(null);
 const heartRateChartRef = ref<HTMLElement | null>(null);
 const zonesChartRef = ref<HTMLElement | null>(null);
 
-// 更新心率图表
-const updateHeartRateChart = () => {
-  if (!heartRateChart.value) return;
+onMounted(() => {
+  // 确保DOM元素存在后再初始化图表
+  nextTick(() => {
+    if (heartRateChartRef.value && zonesChartRef.value) {
+      initCharts();
+    }
+  });
+});
 
-  const data = trainingData.value.heartRateData.map((record: any) => [
-    new Date(record.timestamp).getTime(),
-    record.value
-  ]);
-
-  // 计算训练总时长（分钟）
-  const durationInMinutes = trainingData.value.duration;
-
-  const option = {
-    title: {
-      text: '心率变化趋势',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'axis',
-      formatter: function(params: any) {
-        const date = new Date(params[0].value[0]);
-        return `${date.toLocaleTimeString()}<br/>
-                心率: ${params[0].value[1]} BPM`;
-      }
-    },
-    xAxis: {
-      type: 'time',
-      axisLabel: {
-        formatter: (value: number) => {
-          // 如果训练时长大于3分钟，只显示时:分
-          if (durationInMinutes > 1) {
-            return new Date(value).toLocaleTimeString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-          }
-          // 否则显示时:分:秒
-          return new Date(value).toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-          });
-        }
-      }
-    },
-    yAxis: {
-      type: 'value',
-      name: '心率 (BPM)',
-      min: (value: { min: number }) => Math.max(0, value.min - 10),
-      max: (value: { max: number }) => value.max + 10
-    },
-    series: [{
-      name: '心率',
-      type: 'line',
-      smooth: true,
-      data: data,
-      lineStyle: {
-        color: '#ff5252'
-      },
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(255, 82, 82, 0.3)' },
-          { offset: 1, color: 'rgba(255, 82, 82, 0.1)' }
-        ])
-      }
-    }]
-  };
-
-  heartRateChart.value.setOption(option);
-};
-
-// 更新心率区间图表
-const updateZonesChart = () => {
-  if (!zonesChart.value) return;
-
-  const zones = trainingData.value.heartRateZones;
-  const option = {
-    title: {
-      text: '心率区间分布',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      formatter: '{b}: {c}%'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      top: 'middle'
-    },
-    series: [
-      {
-        name: '心率区间',
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '20',
-            fontWeight: 'bold'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: [
-          { value: zones.rest, name: '休息区间 (<60%)' },
-          { value: zones.warmUp, name: '热身区间 (60-70%)' },
-          { value: zones.fatBurn, name: '燃脂区间 (70-80%)' },
-          { value: zones.cardio, name: '有氧区间 (80-90%)' },
-          { value: zones.peak, name: '峰值区间 (>90%)' }
-        ]
-      }
-    ],
-    color: ['#91CC75', '#FAC858', '#EE6666', '#73C0DE', '#3BA272']
-  };
-
-  zonesChart.value.setOption(option);
-};
-
-// 初始化图表
 const initCharts = () => {
   try {
     // 初始化心率图表
@@ -346,25 +174,8 @@ const initCharts = () => {
   }
 };
 
-// 监听窗口大小变化
-const handleResize = () => {
-  heartRateChart.value?.resize();
-  zonesChart.value?.resize();
-};
-
-onMounted(() => {
-  // 确保DOM元素存在后再初始化图表
-  nextTick(() => {
-    if (heartRateChartRef.value && zonesChartRef.value) {
-      initCharts();
-      window.addEventListener('resize', handleResize);
-    }
-  });
-});
-
-// 在组件卸载时清理
+// 在组件卸载时销毁图表
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
   if (heartRateChart.value) {
     heartRateChart.value.dispose();
   }
@@ -373,9 +184,10 @@ onUnmounted(() => {
   }
 });
 
-// 监听路由变化
+// 监听路由变化，处理返回操作
 watch(() => route.path, async (newPath, oldPath) => {
   if (newPath !== oldPath) {
+    // 清理图表实例
     if (heartRateChart.value) {
       heartRateChart.value.dispose();
     }
@@ -384,11 +196,6 @@ watch(() => route.path, async (newPath, oldPath) => {
     }
   }
 });
-
-// 分享功能
-const shareTraining = () => {
-  ElMessage.success('分享功能开发中...');
-};
 
 // 返回首页
 const backToHome = () => {

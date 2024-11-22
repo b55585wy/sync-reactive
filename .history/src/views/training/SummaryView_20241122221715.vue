@@ -206,9 +206,6 @@ const updateHeartRateChart = () => {
     record.value
   ]);
 
-  // 计算训练总时长（分钟）
-  const durationInMinutes = trainingData.value.duration;
-
   const option = {
     title: {
       text: '心率变化趋势',
@@ -226,14 +223,6 @@ const updateHeartRateChart = () => {
       type: 'time',
       axisLabel: {
         formatter: (value: number) => {
-          // 如果训练时长大于3分钟，只显示时:分
-          if (durationInMinutes > 1) {
-            return new Date(value).toLocaleTimeString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-          }
-          // 否则显示时:分:秒
           return new Date(value).toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',

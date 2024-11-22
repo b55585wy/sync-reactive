@@ -69,7 +69,7 @@ const trainingData = computed(() => {
   if (!heartRateHistory || heartRateHistory.length === 0) {
     console.warn('没有心率历史数据');
     return {
-      duration: Math.round(Number(route.query.duration || 0) / 60),
+      duration: Number(route.query.duration || 0),
       startTime: trainingStore.startTime || new Date().toISOString(),
       mode: route.query.mode || 'heart-monitoring',
       averageHeartRate: 0,
@@ -98,13 +98,13 @@ const trainingData = computed(() => {
   // 计算心率区间分布
   const zones = calculateHeartRateZones(heartRates);
   
-  // 估算卡路里消耗 (简单估算，注意 duration 现在是秒)
+  // 估算卡路里消耗 (简单估算)
   const caloriesBurned = Math.round(
-    (Number(route.query.duration || 0) / 60 * averageHeartRate * 0.14)
+    (Number(route.query.duration || 0) * averageHeartRate * 0.14)
   );
   
   return {
-    duration: Math.round(Number(route.query.duration || 0) / 60),
+    duration: Number(route.query.duration || 0),
     startTime: trainingStore.startTime || new Date().toISOString(),
     mode: route.query.mode || 'heart-monitoring',
     averageHeartRate,
@@ -141,8 +141,8 @@ const trainingScore = computed(() => {
      trainingData.value.heartRateZones.cardio) * 1.2
   );
   
-  // 计算时长达标率 (duration 现在是秒)
-  const targetDuration = Number(route.query.duration || 15);
+  // 计算时长达标率
+  const targetDuration = Number(route.query.duration || 15) * 60;
   const actualDuration = heartRateData.length;
   const durationScore = Math.min(100, (actualDuration / targetDuration) * 100);
   
@@ -206,9 +206,6 @@ const updateHeartRateChart = () => {
     record.value
   ]);
 
-  // 计算训练总时长（分钟）
-  const durationInMinutes = trainingData.value.duration;
-
   const option = {
     title: {
       text: '心率变化趋势',
@@ -226,14 +223,6 @@ const updateHeartRateChart = () => {
       type: 'time',
       axisLabel: {
         formatter: (value: number) => {
-          // 如果训练时长大于3分钟，只显示时:分
-          if (durationInMinutes > 1) {
-            return new Date(value).toLocaleTimeString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-          }
-          // 否则显示时:分:秒
           return new Date(value).toLocaleTimeString('zh-CN', {
             hour: '2-digit',
             minute: '2-digit',

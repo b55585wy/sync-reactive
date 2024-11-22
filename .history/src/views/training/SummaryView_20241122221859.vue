@@ -227,7 +227,7 @@ const updateHeartRateChart = () => {
       axisLabel: {
         formatter: (value: number) => {
           // 如果训练时长大于3分钟，只显示时:分
-          if (durationInMinutes > 1) {
+          if (durationInMinutes > 3) {
             return new Date(value).toLocaleTimeString('zh-CN', {
               hour: '2-digit',
               minute: '2-digit'
