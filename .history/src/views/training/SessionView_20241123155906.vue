@@ -105,7 +105,7 @@ import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
       <div class="dashboard-card status-card">
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
-          <span>训练��态</span>
+          <span>训练态</span>
         </div>
 
         <div class="status-grid">
@@ -269,7 +269,7 @@ const currentPhase = ref('准备阶段');
 const recentHeartRates = ref<number[]>([]);
 const currentAdvice = ref(null);
 
-// 2. ���算属性
+// 2. 算属性
 const targetAchievementRate = computed(() => {
   if (!heartRateHistory.value.length) return 0;
   
@@ -610,7 +610,7 @@ const heartRateZones = computed(() => [
     name: '有氧',
     range: [80, 90],
     color: '#EE6666',
-    description: '提升���肺耐力，增强体能'
+    description: '提升肺耐力，增强体能'
   },
   {
     name: '无氧',
@@ -677,6 +677,7 @@ const getAchievementTip = computed(() => {
 // 1. 添加定时器变量
 let timer: number | null = null;
 let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
 
 // 2. 添加进度计算属性
 const progress = computed(() => {

@@ -677,6 +677,7 @@ const getAchievementTip = computed(() => {
 // 1. 添加定时器变量
 let timer: number | null = null;
 let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
 
 // 2. 添加进度计算属性
 const progress = computed(() => {

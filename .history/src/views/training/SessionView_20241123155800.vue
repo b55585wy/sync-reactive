@@ -677,13 +677,21 @@ const getAchievementTip = computed(() => {
 // 1. 添加定时器变量
 let timer: number | null = null;
 let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
 
 // 2. 添加进度计算属性
 const progress = computed(() => {
   return Math.round((elapsedTime.value / (props.duration * 60)) * 100);
 });
 
-
+// 3. 添加心率状态计算属性
+const getHeartRateStatus = computed(() => {
+  const hr = deviceStore.currentHeartRate;
+  if (!hr) return 'no-data';
+  if (hr > settingsStore.targetHeartRateMax) return 'too-high';
+  if (hr < settingsStore.targetHeartRateMin) return 'too-low';
+  return 'optimal';
+});
 
 
 

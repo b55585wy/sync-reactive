@@ -677,13 +677,21 @@ const getAchievementTip = computed(() => {
 // 1. 添加定时器变量
 let timer: number | null = null;
 let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
 
 // 2. 添加进度计算属性
 const progress = computed(() => {
   return Math.round((elapsedTime.value / (props.duration * 60)) * 100);
 });
 
-
+// 3. 添加心率状态计算属性
+const getHeartRateStatus = computed(() => {
+  const hr = deviceStore.currentHeartRate;
+  if (!hr) return 'no-data';
+  if (hr > settingsStore.targetHeartRateMax) return 'too-high';
+  if (hr < settingsStore.targetHeartRateMin) return 'too-low';
+  return 'optimal';
+});
 
 
 
@@ -750,7 +758,36 @@ onUnmounted(() => {
   if (heartbeatTimer) clearInterval(heartbeatTimer);
 });
 
+// 9. 添加暂停/继续功能
+const togglePause = () => {
+  isPaused.value = !isPaused.value;
+  if (isPaused.value) {
+    if (timer) clearInterval(timer);
+    if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    currentPhase.value = '已暂停';
+  } else {
+    // 重新开始计时
+    timer = setInterval(() => {
+      elapsedTime.value++;
+      if (deviceStore.currentHeartRate > 0) {
+        trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
+      }
+    }, 1000);
 
+    // 重新开始呼吸引导
+    if (props.mode === 'breathing' || props.mode === 'combined') {
+      breathingIntervalTimer = setInterval(() => {
+        updateBreathing();
+      }, 1000);
+    }
+
+    // 重新开始心跳动画
+    updateHeartbeatAnimation();
+    
+    currentPhase.value = '训练中';
+  }
+};
 </script>
 
 <style lang="scss" scoped>

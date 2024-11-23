@@ -105,7 +105,7 @@ import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
       <div class="dashboard-card status-card">
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
-          <span>训练��态</span>
+          <span>训练态</span>
         </div>
 
         <div class="status-grid">
@@ -253,7 +253,12 @@ const trainingStore = useTrainingStore();
 const deviceStore = useDeviceStore();
 const settingsStore = useSettingsStore();
 
-// 1. 首先声明所有响应式变量
+// 在文件最开始的地方，只保留一组定时器变量声明
+let timer: number | null = null;
+let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
+
+// 响应式状态变量
 const elapsedTime = ref(0);
 const heartRateHistory = ref<number[]>([]);
 const maxHeartRate = ref(0);
@@ -268,8 +273,9 @@ const isPaused = ref(false);
 const currentPhase = ref('准备阶段');
 const recentHeartRates = ref<number[]>([]);
 const currentAdvice = ref(null);
+const isBeating = ref(false);
 
-// 2. ���算属性
+// 2. 算属性
 const targetAchievementRate = computed(() => {
   if (!heartRateHistory.value.length) return 0;
   
@@ -677,6 +683,7 @@ const getAchievementTip = computed(() => {
 // 1. 添加定时器变量
 let timer: number | null = null;
 let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
 
 // 2. 添加进度计算属性
 const progress = computed(() => {

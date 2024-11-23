@@ -105,7 +105,7 @@ import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
       <div class="dashboard-card status-card">
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
-          <span>训练��态</span>
+          <span>训练状态</span>
         </div>
 
         <div class="status-grid">
@@ -253,7 +253,13 @@ const trainingStore = useTrainingStore();
 const deviceStore = useDeviceStore();
 const settingsStore = useSettingsStore();
 
-// 1. 首先声明所有响应式变量
+// 在 script setup 的最开始声明所有需要的变量
+// 1. 定时器变量
+let timer: number | null = null;
+let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
+
+// 2. 响应式状态变量
 const elapsedTime = ref(0);
 const heartRateHistory = ref<number[]>([]);
 const maxHeartRate = ref(0);
@@ -268,8 +274,9 @@ const isPaused = ref(false);
 const currentPhase = ref('准备阶段');
 const recentHeartRates = ref<number[]>([]);
 const currentAdvice = ref(null);
+const isBeating = ref(false);
 
-// 2. ���算属性
+// 3. 计算属性
 const targetAchievementRate = computed(() => {
   if (!heartRateHistory.value.length) return 0;
   
@@ -297,37 +304,7 @@ const getIntensityLevel = computed(() => {
   return 'optimal';
 });
 
-// 3. 然后添加 watch
-watch(() => deviceStore.currentHeartRate, (newRate) => {
-  try {
-    if (newRate > 0) {
-      console.log('SessionView 接收到新心率:', newRate);
-      
-      // 添加到心率历史
-      heartRateHistory.value.push(newRate);
-      
-      // 更新统计数据
-      maxHeartRate.value = Math.max(maxHeartRate.value, newRate);
-      minHeartRate.value = Math.min(minHeartRate.value, newRate);
-      heartRateSum.value += newRate;
-      heartRateCount.value++;
-      avgHeartRate.value = Math.round(heartRateSum.value / heartRateCount.value);
-      
-      // 添加到训练记录
-      trainingStore.addHeartRateRecord(newRate);
-    }
-  } catch (error) {
-    console.error('处理心率数据时出错:', error);
-    ElMessage.error('数据处理出错');
-  }
-}, { 
-  immediate: true,
-  onError: (error) => {
-    console.error('心率监听器错误:', error);
-  }
-});
-
-// 4. 方法定义
+// 4. 方法
 const isInZone = (range: [number, number]) => {
   const hr = deviceStore.currentHeartRate;
   return hr >= range[0] && hr <= range[1];
@@ -351,9 +328,32 @@ const getDashboardColor = (percentage: number) => {
   return '#409eff';
 };
 
+// 5. 生命周期钩子
+onMounted(() => {
+  if (!deviceStore.isHeartRateBandConnected) {
+    console.warn('心率带未连接！');
+    ElMessage.warning('心率带未连接，请先连接设备');
+    return;
+  }
 
+  // 开始训练记录
+  trainingStore.startTraining();
+  
+  // 开始计时
+  timer = setInterval(() => {
+    elapsedTime.value++;
+    if (deviceStore.currentHeartRate > 0) {
+      trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
+    }
+  }, 1000);
+});
 
-
+onUnmounted(() => {
+  clearInterval(timer);
+  if (breathingIntervalTimer) {
+    clearInterval(breathingIntervalTimer);
+  }
+});
 
 // 方法
 const formatTime = (seconds: number) => {
@@ -610,7 +610,7 @@ const heartRateZones = computed(() => [
     name: '有氧',
     range: [80, 90],
     color: '#EE6666',
-    description: '提升���肺耐力，增强体能'
+    description: '提升心肺耐力，增强体能'
   },
   {
     name: '无氧',
@@ -677,15 +677,24 @@ const getAchievementTip = computed(() => {
 // 1. 添加定时器变量
 let timer: number | null = null;
 let breathingIntervalTimer: number | null = null;
+let heartbeatTimer: number | null = null;
 
 // 2. 添加进度计算属性
 const progress = computed(() => {
   return Math.round((elapsedTime.value / (props.duration * 60)) * 100);
 });
 
+// 3. 添加心率状态计算属性
+const getHeartRateStatus = computed(() => {
+  const hr = deviceStore.currentHeartRate;
+  if (!hr) return 'no-data';
+  if (hr > settingsStore.targetHeartRateMax) return 'too-high';
+  if (hr < settingsStore.targetHeartRateMin) return 'too-low';
+  return 'optimal';
+});
 
-
-
+// 4. 添加心跳动画状态
+const isBeating = ref(false);
 
 // 5. 添加心跳动画更新函数
 const updateHeartbeatAnimation = () => {
@@ -750,7 +759,36 @@ onUnmounted(() => {
   if (heartbeatTimer) clearInterval(heartbeatTimer);
 });
 
+// 9. 添加暂停/继续功能
+const togglePause = () => {
+  isPaused.value = !isPaused.value;
+  if (isPaused.value) {
+    if (timer) clearInterval(timer);
+    if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    currentPhase.value = '已暂停';
+  } else {
+    // 重新开始计时
+    timer = setInterval(() => {
+      elapsedTime.value++;
+      if (deviceStore.currentHeartRate > 0) {
+        trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
+      }
+    }, 1000);
 
+    // 重新开始呼吸引导
+    if (props.mode === 'breathing' || props.mode === 'combined') {
+      breathingIntervalTimer = setInterval(() => {
+        updateBreathing();
+      }, 1000);
+    }
+
+    // 重新开始心跳动画
+    updateHeartbeatAnimation();
+    
+    currentPhase.value = '训练中';
+  }
+};
 </script>
 
 <style lang="scss" scoped>

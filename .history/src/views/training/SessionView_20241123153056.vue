@@ -93,43 +93,111 @@ import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
         <div class="card-header">
           <el-icon><WindPower /></el-icon>
           <span>呼吸引导</span>
+          <div class="mode-selector">
+            <el-radio-group v-model="breathingPattern" size="small">
+              <el-tooltip content="放松模式" placement="top">
+                <el-radio-button label="relax">
+                  <el-icon><Sunny /></el-icon>
+                </el-radio-button>
+              </el-tooltip>
+              <el-tooltip content="专注模" placement="top">
+                <el-radio-button label="focus">
+                  <el-icon><Aim /></el-icon>
+                </el-radio-button>
+              </el-tooltip>
+              <el-tooltip content="自定义模式" placement="top">
+                <el-radio-button label="custom">
+                  <el-icon><Setting /></el-icon>
+                </el-radio-button>
+              </el-tooltip>
+            </el-radio-group>
+          </div>
         </div>
 
-        <BreathingFlower
+        <!-- 使用呼吸花瓣组件 -->
+        <breathing-flower
           :breathing-phase="breathingPhase"
           :breathing-countdown="breathingCountdown"
         />
+
+        <div class="breathing-settings" v-if="breathingPattern === 'custom'">
+          <div class="setting-item">
+            <el-tooltip content="吸气时长">
+              <el-icon><TopRight /></el-icon>
+            </el-tooltip>
+            <el-slider v-model="inhaleTime" :min="2" :max="6" :step="0.5" />
+          </div>
+          <div class="setting-item">
+            <el-tooltip content="屏息时长">
+              <el-icon><Timer /></el-icon>
+            </el-tooltip>
+            <el-slider v-model="holdTime" :min="0" :max="4" :step="0.5" />
+          </div>
+          <div class="setting-item">
+            <el-tooltip content="呼气时长">
+              <el-icon><BottomRight /></el-icon>
+            </el-tooltip>
+            <el-slider v-model="exhaleTime" :min="2" :max="8" :step="0.5" />
+          </div>
+        </div>
       </div>
 
       <!-- 训练状态卡片 -->
       <div class="dashboard-card status-card">
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
-          <span>训练��态</span>
+          <span>训练状态</span>
         </div>
 
         <div class="status-grid">
           <div class="status-item">
-            <el-progress 
-              type="dashboard" 
-              :percentage="targetAchievementRate"
-              :color="getDashboardColor(targetAchievementRate)"
-            />
+            <el-tooltip content="目标心率达成率">
+              <div class="status-icon">
+                <el-icon><Trophy /></el-icon>
+              </div>
+            </el-tooltip>
+            <div class="status-value">
+              <el-progress 
+                type="dashboard" 
+                :percentage="targetAchievementRate"
+                :color="getDashboardColor(targetAchievementRate)"
+              />
+            </div>
           </div>
 
           <div class="status-item">
-            <span class="number">{{ estimatedCalories }}</span>
-            <span class="unit">千卡</span>
+            <el-tooltip content="预计消耗热量">
+              <div class="status-icon">
+                <el-icon><Histogram /></el-icon>
+              </div>
+            </el-tooltip>
+            <div class="status-value">
+              <span class="number">{{ estimatedCalories }}</span>
+              <span class="unit">千卡</span>
+            </div>
           </div>
 
           <div class="status-item">
-            <span class="intensity-indicator" :class="getIntensityLevel">
-              {{ getIntensityText }}
-            </span>
+            <el-tooltip content="训练强度">
+              <div class="status-icon">
+                <el-icon><TrendCharts /></el-icon>
+              </div>
+            </el-tooltip>
+            <div class="status-value">
+              <span class="intensity-indicator" :class="getIntensityLevel">
+                {{ getIntensityText }}
+              </span>
+            </div>
           </div>
         </div>
 
         <div class="zone-distribution">
+          <div class="zone-header">
+            <span>心率区间分布</span>
+            <el-tooltip content="查看区间说明">
+              <el-icon><InfoFilled /></el-icon>
+            </el-tooltip>
+          </div>
           <div class="zone-bars">
             <div 
               v-for="zone in heartRateZones" 
@@ -137,16 +205,20 @@ import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
               class="zone-bar"
               :class="{ active: isInZone(zone.range) }"
             >
-              <div class="bar-progress" 
-                :style="{ 
-                  width: `${getZonePercentage(zone.range)}%`,
-                  backgroundColor: zone.color 
-                }"
-              ></div>
-              <div class="bar-label">
-                <span class="name">{{ zone.name }}</span>
-                <span class="percentage">{{ getZonePercentage(zone.range) }}%</span>
-              </div>
+              <el-tooltip :content="zone.description" placement="right">
+                <div class="bar-content">
+                  <div class="bar-progress" 
+                    :style="{ 
+                      width: `${getZonePercentage(zone.range)}%`,
+                      backgroundColor: zone.color 
+                    }"
+                  ></div>
+                  <div class="bar-label">
+                    <span class="name">{{ zone.name }}</span>
+                    <span class="percentage">{{ getZonePercentage(zone.range) }}%</span>
+                  </div>
+                </div>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -215,8 +287,6 @@ import { useDeviceStore } from '@/stores/device';
 import { useSettingsStore } from '@/stores/settings';
 import SparklineChart from '@/components/charts/SparklineChart.vue';
 import { generateTrainingAdvice } from '@/utils/trainingAdvice';
-import { ElMessage } from 'element-plus';
-import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
 import { 
   ArrowLeft,
   Monitor,
@@ -253,9 +323,9 @@ const trainingStore = useTrainingStore();
 const deviceStore = useDeviceStore();
 const settingsStore = useSettingsStore();
 
-// 1. 首先声明所有响应式变量
+// 状态管理
 const elapsedTime = ref(0);
-const heartRateHistory = ref<number[]>([]);
+const currentHeartRate = ref(0);
 const maxHeartRate = ref(0);
 const minHeartRate = ref(deviceStore.currentHeartRate || 999);
 const avgHeartRate = ref(0);
@@ -264,96 +334,77 @@ const heartRateCount = ref(0);
 const breathingPhase = ref('inhale');
 const breathingRate = ref(6);
 const breathingCountdown = ref(settingsStore.inhaleTime);
+
+// 计时器
+let timer: number;
+let breathingIntervalTimer: number;
+
+// 新增状态
 const isPaused = ref(false);
 const currentPhase = ref('准备阶段');
 const recentHeartRates = ref<number[]>([]);
 const currentAdvice = ref(null);
 
-// 2. ���算属性
-const targetAchievementRate = computed(() => {
-  if (!heartRateHistory.value.length) return 0;
-  
-  const inTargetCount = heartRateHistory.value.filter(hr => 
-    hr >= settingsStore.targetHeartRateMin && 
-    hr <= settingsStore.targetHeartRateMax
-  ).length;
-  
-  return Math.round((inTargetCount / heartRateHistory.value.length) * 100);
+// 计算属性
+const getSessionTitle = computed(() => {
+  switch (props.mode) {
+    case 'heartRate': return '心率训练';
+    case 'breathing': return '呼吸训练';
+    case 'combined': return '综合训练';
+    default: return '训练会话';
+  }
 });
 
-const estimatedCalories = computed(() => {
-  const weight = settingsStore.weight;
-  const avgHR = avgHeartRate.value;
-  const duration = elapsedTime.value / 60;
-  
-  return Math.round((duration * (0.6309 * avgHR + 0.1988 * weight + 0.2017 * settingsStore.age - 55.0969) / 4.184));
+const progress = computed(() => {
+  return (elapsedTime.value / (props.duration * 60)) * 100;
 });
 
-const getIntensityLevel = computed(() => {
-  const hr = deviceStore.currentHeartRate;
-  if (!hr) return 'none';
-  if (hr > settingsStore.targetHeartRateMax + 10) return 'high';
-  if (hr < settingsStore.targetHeartRateMin - 10) return 'low';
+const breathingText = computed(() => {
+  return breathingPhase.value === 'inhale' ? '吸气' : '呼气';
+});
+
+const getHeartRateStatus = computed(() => {
+  if (!deviceStore.currentHeartRate) return 'no-data';
+  if (deviceStore.currentHeartRate > settingsStore.targetHeartRateMax) return 'too-high';
+  if (deviceStore.currentHeartRate < settingsStore.targetHeartRateMin) return 'too-low';
   return 'optimal';
 });
 
-// 3. 然后添加 watch
-watch(() => deviceStore.currentHeartRate, (newRate) => {
-  try {
-    if (newRate > 0) {
-      console.log('SessionView 接收到新心率:', newRate);
-      
-      // 添加到心率历史
-      heartRateHistory.value.push(newRate);
-      
-      // 更新统计数据
-      maxHeartRate.value = Math.max(maxHeartRate.value, newRate);
-      minHeartRate.value = Math.min(minHeartRate.value, newRate);
-      heartRateSum.value += newRate;
-      heartRateCount.value++;
-      avgHeartRate.value = Math.round(heartRateSum.value / heartRateCount.value);
-      
-      // 添加到训练记录
-      trainingStore.addHeartRateRecord(newRate);
-    }
-  } catch (error) {
-    console.error('处理心率数据时出错:', error);
-    ElMessage.error('数据处理出错');
+const getGuidanceMessage = computed(() => {
+  if (!deviceStore.currentHeartRate) return '等待心率数���...';
+  if (deviceStore.currentHeartRate > settingsStore.targetHeartRateMax) {
+    return '心率偏高，请跟随呼吸引导放松';
   }
-}, { 
-  immediate: true,
-  onError: (error) => {
-    console.error('心率监听器错误:', error);
+  if (deviceStore.currentHeartRate < settingsStore.targetHeartRateMin) {
+    return '心率偏低，可以稍微提升呼吸频率';
+  }
+  return '心率处于理想范围，请保持当前节奏';
+});
+
+const getBreathingInstruction = computed(() => {
+  switch(breathingPhase.value) {
+    case 'inhale': return `吸气 (${breathingCountdown.value}s)`;
+    case 'hold': return `屏息 (${breathingCountdown.value}s)`;
+    case 'exhale': return `呼气 (${breathingCountdown.value}s)`;
   }
 });
 
-// 4. 方法定义
-const isInZone = (range: [number, number]) => {
-  const hr = deviceStore.currentHeartRate;
-  return hr >= range[0] && hr <= range[1];
-};
+const getHeartRatePercentage = computed(() => {
+  if (!deviceStore.currentHeartRate) return 0;
+  const range = settingsStore.targetHeartRateMax - settingsStore.targetHeartRateMin;
+  const current = deviceStore.currentHeartRate - settingsStore.targetHeartRateMin;
+  return Math.min(100, Math.max(0, (current / range) * 100));
+});
 
-const getZonePercentage = (range: [number, number]) => {
-  const totalTime = heartRateHistory.value.length;
-  if (totalTime === 0) return 0;
-  
-  const timeInZone = heartRateHistory.value.filter(hr => 
-    hr >= range[0] && hr <= range[1]
-  ).length;
-  
-  return Math.round((timeInZone / totalTime) * 100);
-};
-
-const getDashboardColor = (percentage: number) => {
-  if (percentage < 30) return '#909399';
-  if (percentage < 60) return '#e6a23c';
-  if (percentage < 80) return '#67c23a';
-  return '#409eff';
-};
-
-
-
-
+const getHeartRateColor = computed(() => {
+  const status = getHeartRateStatus.value;
+  return {
+    'too-high': '#f56c6c',
+    'too-low': '#e6a23c',
+    'optimal': '#67c23a',
+    'no-data': '#909399'
+  }[status];
+});
 
 // 方法
 const formatTime = (seconds: number) => {
@@ -413,8 +464,16 @@ const confirmEndSession = async () => {
 watch(() => deviceStore.currentHeartRate, (newRate) => {
   if (newRate > 0) {
     console.log('SessionView 接收到新心率:', newRate);
-    // 添加到心率历史
-    heartRateHistory.value.push(newRate);
+    // 更新心率历史
+    recentHeartRates.value.push({
+      timestamp: Date.now(),
+      value: newRate
+    });
+    
+    // 限制数组长度
+    if (recentHeartRates.value.length > 60) { // 保留最近60个数据点
+      recentHeartRates.value.shift();
+    }
     
     // 更新统计数据
     maxHeartRate.value = Math.max(maxHeartRate.value, newRate);
@@ -430,43 +489,131 @@ watch(() => deviceStore.currentHeartRate, (newRate) => {
 
 // 生命周期钩子
 onMounted(async () => {
-  try {
-    if (!deviceStore.isHeartRateBandConnected) {
-      console.warn('心率带未连接！');
-      ElMessage.warning('心率带未连接，请先连接设备');
-      return;
-    }
-
-    console.log('心率带连接状态:', deviceStore.isHeartRateBandConnected);
-    console.log('当前心率:', deviceStore.currentHeartRate);
-    
-    // 开始训练记录
-    trainingStore.startTraining();
-    
-    // 开始计时
-    timer = setInterval(() => {
-      elapsedTime.value++;
-      if (deviceStore.currentHeartRate > 0) {
-        trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
-      }
-    }, 1000);
-
-    // 如果是呼吸训练模式，开始呼吸引导
-    if (props.mode === 'breathing' || props.mode === 'combined') {
-      breathingIntervalTimer = setInterval(() => {
-        updateBreathing();
-      }, 1000);
-    }
-  } catch (error) {
-    console.error('初始化训练失败:', error);
-    ElMessage.error('初始化训练失败');
+  if (!deviceStore.isHeartRateBandConnected) {
+    console.warn('心率带未连接！');
+    ElMessage.warning('心率带未连接，请先连接设备');
+    return;
   }
+
+  console.log('心率带连接状态:', deviceStore.isHeartRateBandConnected);
+  console.log('当前心率:', deviceStore.currentHeartRate);
+  
+  // 开始训练
+  trainingStore.startTraining();
+  
+  // 初始化心率数据
+  if (deviceStore.currentHeartRate > 0) {
+    currentHeartRate.value = deviceStore.currentHeartRate;
+    minHeartRate.value = deviceStore.currentHeartRate;
+    maxHeartRate.value = deviceStore.currentHeartRate;
+    heartRateSum.value = deviceStore.currentHeartRate;
+    heartRateCount.value = 1;
+    avgHeartRate.value = deviceStore.currentHeartRate;
+  }
+
+  // 开始计时
+  timer = setInterval(() => {
+    elapsedTime.value++;
+    if (deviceStore.currentHeartRate > 0) {
+      trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
+    }
+  }, 1000);
+
+  // 呼吸引导
+  if (props.mode === 'breathing' || props.mode === 'combined') {
+    breathingIntervalTimer = setInterval(() => {
+      updateBreathing();
+    }, 1000);
+  }
+
+  // 根据实际心率设置心跳动画
+  const updateHeartbeatAnimation = () => {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+    }
+    
+    const heartRate = deviceStore.currentHeartRate;
+    if (heartRate > 0) {
+      const interval = 60000 / heartRate; // 根据心率计算间隔时间
+      heartbeatTimer = setInterval(() => {
+        isBeating.value = true;
+        setTimeout(() => {
+          isBeating.value = false;
+        }, 200);
+      }, interval);
+    }
+  };
+
+  // 监听心率变化
+  watch(() => deviceStore.currentHeartRate, updateHeartbeatAnimation, { immediate: true });
+
+  // 初始化心率图表
+  const chartRef = ref(null);
+  let chart: echarts.ECharts | null = null;
+
+  if (chartRef.value) {
+    chart = echarts.init(chartRef.value);
+    const option = {
+      grid: {
+        top: 10,
+        right: 10,
+        bottom: 20,
+        left: 40
+      },
+      xAxis: {
+        type: 'time',
+        splitLine: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        min: (value: { min: number }) => Math.max(0, value.min - 10),
+        max: (value: { max: number }) => value.max + 10
+      },
+      series: [{
+        type: 'line',
+        smooth: true,
+        data: recentHeartRates.value,
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(64,158,255,0.3)' },
+            { offset: 1, color: 'rgba(64,158,255,0.1)' }
+          ])
+        },
+        lineStyle: {
+          color: '#409eff',
+          width: 2
+        }
+      }]
+    };
+    chart.setOption(option);
+  }
+
+  // 监听数据变化更新图表
+  watch(recentHeartRates, () => {
+    if (chart) {
+      chart.setOption({
+        series: [{
+          data: recentHeartRates.value
+        }]
+      });
+    }
+  });
+
+  // 组件卸载时清理图表实例
+  onUnmounted(() => {
+    if (chart) {
+      chart.dispose();
+    }
+  });
 });
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer);
+  // 确保组件卸载时清理资源
+  clearInterval(timer);
   if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
-  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+  }
 });
 
 // 更新呼吸计时
@@ -502,30 +649,9 @@ watch(() => [settingsStore.targetHeartRateMin, settingsStore.targetHeartRateMax]
 const togglePause = () => {
   isPaused.value = !isPaused.value;
   if (isPaused.value) {
-    if (timer) clearInterval(timer);
-    if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
-    if (heartbeatTimer) clearInterval(heartbeatTimer);
-    currentPhase.value = '已暂停';
+    pauseTraining();
   } else {
-    // 重新开始计时
-    timer = setInterval(() => {
-      elapsedTime.value++;
-      if (deviceStore.currentHeartRate > 0) {
-        trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
-      }
-    }, 1000);
-
-    // 重新开始呼吸引导
-    if (props.mode === 'breathing' || props.mode === 'combined') {
-      breathingIntervalTimer = setInterval(() => {
-        updateBreathing();
-      }, 1000);
-    }
-
-    // 重新开始心跳动画
-    updateHeartbeatAnimation();
-    
-    currentPhase.value = '训练中';
+    resumeTraining();
   }
 };
 
@@ -592,6 +718,47 @@ const resumeTraining = () => {
   currentPhase.value = '训练中';
 };
 
+
+
+const targetAchievementRate = computed(() => {
+  if (!heartRateHistory.value.length) return 0;
+  const inTargetCount = heartRateHistory.value.filter(hr => 
+    hr >= settingsStore.targetHeartRateMin && 
+    hr <= settingsStore.targetHeartRateMax
+  ).length;
+  return Math.round((inTargetCount / heartRateHistory.value.length) * 100);
+});
+
+const estimatedCalories = computed(() => {
+  // 基于心率、体重和运动时间的卡路里消耗估算
+  const weight = settingsStore.weight;
+  const avgHR = avgHeartRate.value;
+  const duration = elapsedTime.value / 60; // 转换为分钟
+  
+  return Math.round((duration * (0.6309 * avgHR + 0.1988 * weight + 0.2017 * settingsStore.age - 55.0969) / 4.184));
+});
+
+// 呼吸模式处理
+const breathingPatterns = {
+  relax: {
+    inhale: 4,
+    hold: 4,
+    exhale: 6
+  },
+  focus: {
+    inhale: 5,
+    hold: 0,
+    exhale: 5
+  },
+  custom: {
+    inhale: ref(4),
+    hold: ref(2),
+    exhale: ref(6)
+  }
+};
+
+
+
 // 添加心率区间相关的计算属性
 const heartRateZones = computed(() => [
   {
@@ -610,7 +777,7 @@ const heartRateZones = computed(() => [
     name: '有氧',
     range: [80, 90],
     color: '#EE6666',
-    description: '提升���肺耐力，增强体能'
+    description: '提升心肺耐力，增强体能'
   },
   {
     name: '无氧',
@@ -619,6 +786,43 @@ const heartRateZones = computed(() => [
     description: '高强度训练，提升运动表现'
   }
 ]);
+
+// 添加心率相关的方法
+const isInZone = (range: [number, number]) => {
+  const hr = deviceStore.currentHeartRate;
+  return hr >= range[0] && hr <= range[1];
+};
+
+const getZonePercentage = (range: [number, number]) => {
+  const totalTime = heartRateHistory.value.length;
+  if (totalTime === 0) return 0;
+  
+  const timeInZone = heartRateHistory.value.filter(hr => 
+    hr >= range[0] && hr <= range[1]
+  ).length;
+  
+  return Math.round((timeInZone / totalTime) * 100);
+};
+
+// 添加呼吸模式相关的响应式变量
+const breathingPattern = ref('relax');
+const inhaleTime = ref(4);
+const holdTime = ref(2);
+const exhaleTime = ref(6);
+
+
+// 监听呼吸模式变化
+watch(() => breathingPattern.value, (newPattern) => {
+  if (newPattern !== 'custom') {
+    const pattern = breathingPatterns[newPattern];
+    inhaleTime.value = pattern.inhale;
+    holdTime.value = pattern.hold;
+    exhaleTime.value = pattern.exhale;
+  }
+});
+
+// 添加其他必要的响应式变量
+const heartRateHistory = ref<number[]>([]);
 
 // 添加设备状态相关的计算属性
 const getSignalStrength = computed(() => {
@@ -637,7 +841,7 @@ const getBatteryLevel = computed(() => {
   return 'battery-critical';
 });
 
-// 添加心跳动画态
+// 添加心跳动画状态
 const isBeating = ref(false);
 let heartbeatTimer: number;
 
@@ -655,6 +859,23 @@ const confirmExit = async () => {
   }
 };
 
+// 添加仪表盘颜色计算方法
+const getDashboardColor = (percentage: number) => {
+  if (percentage < 30) return '#909399';
+  if (percentage < 60) return '#e6a23c';
+  if (percentage < 80) return '#67c23a';
+  return '#409eff';
+};
+
+// 添加强度等级计算
+const getIntensityLevel = computed(() => {
+  const hr = deviceStore.currentHeartRate;
+  if (!hr) return 'none';
+  if (hr > settingsStore.targetHeartRateMax + 10) return 'high';
+  if (hr < settingsStore.targetHeartRateMin - 10) return 'low';
+  return 'optimal';
+});
+
 // 添加强度文本计算
 const getIntensityText = computed(() => {
   switch (getIntensityLevel.value) {
@@ -664,93 +885,6 @@ const getIntensityText = computed(() => {
     default: return '未知';
   }
 });
-
-// 添加实时提示
-const getAchievementTip = computed(() => {
-  const rate = targetAchievementRate.value;
-  if (rate < 30) return '建议调整呼吸节奏，帮助心率达到目标范围';
-  if (rate < 60) return '正在接近目标，继续保持';
-  if (rate < 80) return '表现不错，继续保持当前状态';
-  return '完美！心率控制得很好';
-});
-
-// 1. 添加定时器变量
-let timer: number | null = null;
-let breathingIntervalTimer: number | null = null;
-
-// 2. 添加进度计算属性
-const progress = computed(() => {
-  return Math.round((elapsedTime.value / (props.duration * 60)) * 100);
-});
-
-
-
-
-
-// 5. 添加心跳动画更新函数
-const updateHeartbeatAnimation = () => {
-  if (heartbeatTimer) {
-    clearInterval(heartbeatTimer);
-  }
-  
-  const heartRate = deviceStore.currentHeartRate;
-  if (heartRate > 0) {
-    const interval = 60000 / heartRate; // 根据心率计算间隔时间
-    heartbeatTimer = setInterval(() => {
-      isBeating.value = true;
-      setTimeout(() => {
-        isBeating.value = false;
-      }, 200);
-    }, interval);
-  }
-};
-
-// 6. 监听心率变化更新动画
-watch(() => deviceStore.currentHeartRate, updateHeartbeatAnimation, { immediate: true });
-
-// 7. 修改 onMounted 钩子
-onMounted(async () => {
-  try {
-    if (!deviceStore.isHeartRateBandConnected) {
-      console.warn('心率带未连接！');
-      ElMessage.warning('心率带未连接，请先连接设备');
-      return;
-    }
-
-    console.log('心率带连接状态:', deviceStore.isHeartRateBandConnected);
-    console.log('当前心率:', deviceStore.currentHeartRate);
-    
-    // 开始训练记录
-    trainingStore.startTraining();
-    
-    // 开始计时
-    timer = setInterval(() => {
-      elapsedTime.value++;
-      if (deviceStore.currentHeartRate > 0) {
-        trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
-      }
-    }, 1000);
-
-    // 如果是呼吸训练模式，开始呼吸引导
-    if (props.mode === 'breathing' || props.mode === 'combined') {
-      breathingIntervalTimer = setInterval(() => {
-        updateBreathing();
-      }, 1000);
-    }
-  } catch (error) {
-    console.error('初始化训练失败:', error);
-    ElMessage.error('初始化训练失败');
-  }
-});
-
-// 8. 修改 onUnmounted 钩子
-onUnmounted(() => {
-  if (timer) clearInterval(timer);
-  if (breathingIntervalTimer) clearInterval(breathingIntervalTimer);
-  if (heartbeatTimer) clearInterval(heartbeatTimer);
-});
-
-
 </script>
 
 <style lang="scss" scoped>
@@ -954,7 +1088,7 @@ onUnmounted(() => {
   }
 }
 
-// 间分布样式
+// 区间分布样式
 .zone-distribution {
   .zone-bars {
     display: flex;
@@ -1061,24 +1195,6 @@ onUnmounted(() => {
       width: 150px;
       height: 150px;
     }
-  }
-}
-
-.achievement-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  
-  .percentage {
-    font-size: 20px;
-    font-weight: bold;
-    color: #303133;
-  }
-  
-  .label {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
   }
 }
 </style> 
