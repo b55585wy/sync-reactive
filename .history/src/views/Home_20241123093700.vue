@@ -342,7 +342,7 @@ const getTodayTrainingMinutes = async () => {
       return total + (training.duration || 0)
     }, 0)
   } catch (error) {
-    console.error('获取今日训练时长失败:', error)
+    console.error('���取今日训练时长失败:', error)
     todayMinutes.value = 0
   }
 }

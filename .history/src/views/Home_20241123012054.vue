@@ -59,7 +59,7 @@
               {{ deviceStore.isHeartRateBandConnected ? '已连接' : '点击连接' }}
             </el-tag>
             <div v-if="deviceStore.isHeartRateBandConnected" class="device-data">
-              <HeartIcon :size="16" color="#f56c6c" class="heart-beat" />
+              <el-icon color="#f56c6c"><Histogram /></el-icon>
               <span>{{ deviceStore.currentHeartRate }} BPM</span>
             </div>
           </div>
@@ -182,6 +182,7 @@ import {
   Connection, 
   Link, 
   CircleCheck, 
+  Histogram, 
   Odometer,
   Timer,
   DataLine,
@@ -191,7 +192,6 @@ import {
   VideoPlay
 } from '@element-plus/icons-vue'
 import BluetoothService from '@/services/BluetoothService'
-import HeartIcon from '@/components/icons/HeartIcon.vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -680,28 +680,5 @@ const handleDeviceClick = async (deviceType) => {
 .settings-button:hover {
   background: #e8eaed;
   transform: rotate(30deg);
-}
-
-.heart-beat {
-  margin-right: 4px;
-  animation: heartBeat 1.2s ease-in-out infinite;
-}
-
-@keyframes heartBeat {
-  0% {
-    transform: scale(1);
-  }
-  14% {
-    transform: scale(1.1);
-  }
-  28% {
-    transform: scale(1);
-  }
-  42% {
-    transform: scale(1.1);
-  }
-  70% {
-    transform: scale(1);
-  }
 }
 </style> 

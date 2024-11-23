@@ -182,6 +182,7 @@ import {
   Connection, 
   Link, 
   CircleCheck, 
+  HeartFilled, 
   Odometer,
   Timer,
   DataLine,
