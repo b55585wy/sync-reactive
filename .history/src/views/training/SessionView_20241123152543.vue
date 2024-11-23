@@ -84,7 +84,13 @@ import * as echarts from 'echarts';
           </div>
         </div>
 
-        <div class="heart-rate-chart" ref="chartRef"></div>
+        <div class="heart-rate-chart">
+          <line-chart 
+            :data="recentHeartRates"
+            :target-range="[settingsStore.targetHeartRateMin, settingsStore.targetHeartRateMax]"
+            height="120px"
+          />
+        </div>
       </div>
 
       <!-- 呼吸引导卡片 -->
@@ -553,11 +559,9 @@ onMounted(async () => {
   watch(() => deviceStore.currentHeartRate, updateHeartbeatAnimation, { immediate: true });
 
   // 初始化心率图表
-  const chartRef = ref(null);
-  let chart: echarts.ECharts | null = null;
-
-  if (chartRef.value) {
-    chart = echarts.init(chartRef.value);
+  const chartDom = document.querySelector('.heart-rate-chart');
+  if (chartDom) {
+    const chart = echarts.init(chartDom);
     const option = {
       grid: {
         top: 10,
@@ -591,25 +595,16 @@ onMounted(async () => {
       }]
     };
     chart.setOption(option);
-  }
 
-  // 监听数据变化更新图表
-  watch(recentHeartRates, () => {
-    if (chart) {
+    // 监听数据变化更新图表
+    watch(recentHeartRates, () => {
       chart.setOption({
         series: [{
           data: recentHeartRates.value
         }]
       });
-    }
-  });
-
-  // 组件卸载时清理图表实例
-  onUnmounted(() => {
-    if (chart) {
-      chart.dispose();
-    }
-  });
+    });
+  }
 });
 
 onUnmounted(() => {

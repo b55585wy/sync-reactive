@@ -11,6 +11,9 @@ export interface Settings {
   inhaleTime: number
   holdTime: number
   exhaleTime: number
+<<<<<<< Updated upstream
+  age: number
+=======
   breathingPattern: 'beginner' | 'intermediate' | 'advanced'
   reminderEnabled: boolean
   reminderTime: string
@@ -40,25 +43,33 @@ interface SettingsState {
   reminderDays: number[]
   defaultTrainingDuration: number
   // 添加其他状态的类型...
+>>>>>>> Stashed changes
 }
 
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
+<<<<<<< Updated upstream
+=======
     username: '',
     age: 30,
     height: 170,
     weight: 60,
     weeklyGoal: 150,
+>>>>>>> Stashed changes
     targetHeartRateMin: 60,
     targetHeartRateMax: 80,
     inhaleTime: 4,
     holdTime: 2,
     exhaleTime: 6,
+<<<<<<< Updated upstream
+    age: 30
+=======
     breathingPattern: 'beginner',
     reminderEnabled: false,
     reminderTime: '08:00',
     reminderDays: [1,2,3,4,5],
     defaultTrainingDuration: 15
+>>>>>>> Stashed changes
   }),
 
   getters: {
@@ -85,6 +96,16 @@ export const useSettingsStore = defineStore('settings', {
   },
 
   actions: {
+<<<<<<< Updated upstream
+    updateSettings(settings: Partial<Settings>) {
+      Object.assign(this, settings)
+    },
+
+    calculateDefaultHeartRateRange() {
+      const maxHR = 220 - this.age
+      this.targetHeartRateMin = Math.round(maxHR * 0.5)
+      this.targetHeartRateMax = Math.round(maxHR * 0.7)
+=======
     // 初始化设置
     async initializeSettings(): Promise<void> {
       try {
@@ -110,6 +131,7 @@ export const useSettingsStore = defineStore('settings', {
         console.error('保存设置失败:', error)
         throw error
       }
+>>>>>>> Stashed changes
     }
   },
 
