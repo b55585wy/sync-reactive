@@ -183,17 +183,6 @@ const isPaused = ref(false);
 const currentAdvice = ref(null);
 let timer: number | null = null;
 
-const props = defineProps({
-  mode: {
-    type: String,
-    required: true
-  },
-  duration: {
-    type: Number,
-    required: true
-  }
-});
-
 const formatTime = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
@@ -228,19 +217,6 @@ const confirmEndSession = async () => {
       type: 'warning'
     });
     router.push({ name: 'TrainingSummary' });
-  } catch (error) {
-    ElMessage.error('操作取消');
-  }
-};
-
-const confirmExit = async () => {
-  try {
-    await ElMessageBox.confirm('确定要退出训练吗？', '退出训练', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    });
-    router.push({ name: 'Training' });
   } catch (error) {
     ElMessage.error('操作取消');
   }
