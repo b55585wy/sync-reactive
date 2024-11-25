@@ -300,42 +300,30 @@ const bluetoothService = new BluetoothService()
 const isSaving = ref(false)
 const isSyncing = ref(false)
 
-// 创建临时设置对象
-const tempSettings = ref({
-  username: '',
-  age: 25,
-  gender: 'male',
-  height: 170,
-  weight: 65,
-  // 训练偏好
-  defaultTrainingDuration: 15,
-  breathingPattern: 'beginner',
-  goal: ['relaxation'],
-  reminderEnabled: false,
-  reminderTime: null,
-  reminderDays: [],
-  
-  // 目标设置
-  weeklyGoal: 150,
-  targetHeartRateMin: 60,
-  targetHeartRateMax: 80,
-  inhaleTime: 4,
-  holdTime: 2,
-  exhaleTime: 6,
-  
-  // 其他设置
-  language: 'zh-CN',
-  theme: 'light',
-  autoSync: true
-})
-
-// 添加单独的 ref 变量，用于心率和呼吸设置
+// 添加所需的 ref 变量
 const targetHeartRateMin = ref(60)
 const targetHeartRateMax = ref(80)
 const inhaleTime = ref(4)
 const holdTime = ref(2)
 const exhaleTime = ref(6)
 const reminderTime = ref('08:00')
+
+// 临时设置对象
+const tempSettings = ref({
+  username: '',
+  age: 25,
+  gender: 'male',
+  height: 170,
+  weight: 65,
+  weeklyGoal: 150,
+  breathingPattern: 'beginner',
+  defaultTrainingDuration: 15,
+  reminderEnabled: false,
+  reminderTime: '08:00',
+  reminderDays: [1,2,3,4,5],
+  theme: 'light',
+  autoSync: true
+})
 
 // 更新心率设置
 const updateHeartRateSettings = () => {
@@ -403,12 +391,12 @@ const saveChanges = async () => {
     // 合并所有设置
     const newSettings = {
       ...tempSettings.value,
-      targetHeartRateMin: targetHeartRateMin.value,
-      targetHeartRateMax: targetHeartRateMax.value,
-      inhaleTime: inhaleTime.value,
-      holdTime: holdTime.value,
-      exhaleTime: exhaleTime.value,
-      reminderTime: reminderTime.value,
+      targetHeartRateMin: tempSettings.value.targetHeartRateMin,
+      targetHeartRateMax: tempSettings.value.targetHeartRateMax,
+      inhaleTime: tempSettings.value.inhaleTime,
+      holdTime: tempSettings.value.holdTime,
+      exhaleTime: tempSettings.value.exhaleTime,
+      reminderTime: tempSettings.value.reminderTime,
       breathingPattern: tempSettings.value.breathingPattern,
       defaultTrainingDuration: tempSettings.value.defaultTrainingDuration,
       reminderEnabled: tempSettings.value.reminderEnabled,

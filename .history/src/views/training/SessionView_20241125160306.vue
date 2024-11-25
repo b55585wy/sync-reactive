@@ -105,7 +105,7 @@ import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
       <div class="dashboard-card status-card">
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
-          <span>训练状态</span>
+          <span>训练态</span>
         </div>
 
         <div class="status-grid">

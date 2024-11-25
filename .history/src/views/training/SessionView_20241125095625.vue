@@ -105,7 +105,7 @@ import BreathingFlower from '@/components/breathing/BreathingFlower.vue';
       <div class="dashboard-card status-card">
         <div class="card-header">
           <el-icon><DataAnalysis /></el-icon>
-          <span>训练状态</span>
+          <span>训练态</span>
         </div>
 
         <div class="status-grid">
@@ -428,40 +428,6 @@ watch(() => deviceStore.currentHeartRate, (newRate) => {
   }
 }, { immediate: true });
 
-// 生命周期钩子
-onMounted(async () => {
-  try {
-    if (!deviceStore.isHeartRateBandConnected) {
-      console.warn('心率带未连接！');
-      ElMessage.warning('心率带未连接，请先连接设备');
-      return;
-    }
-
-    console.log('心率带连接状态:', deviceStore.isHeartRateBandConnected);
-    console.log('当前心率:', deviceStore.currentHeartRate);
-    
-    // 开始训练记录
-    trainingStore.startTraining();
-    
-    // 开始计时
-    timer = setInterval(() => {
-      elapsedTime.value++;
-      if (deviceStore.currentHeartRate > 0) {
-        trainingStore.addHeartRateRecord(deviceStore.currentHeartRate);
-      }
-    }, 1000);
-
-    // 如果是呼吸训练模式，开始呼吸引导
-    if (props.mode === 'breathing' || props.mode === 'combined') {
-      breathingIntervalTimer = setInterval(() => {
-        updateBreathing();
-      }, 1000);
-    }
-  } catch (error) {
-    console.error('初始化训练失败:', error);
-    ElMessage.error('初始化训练失败');
-  }
-});
 
 onUnmounted(() => {
   if (timer) clearInterval(timer);

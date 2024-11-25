@@ -29,7 +29,7 @@ export default defineComponent({
     const deviceStore = useDeviceStore();
 
     const mode = ref(route.query.mode as string);
-    const duration = ref(Number(route.query.duration) || 15);
+    const duration = ref(Number(route.query.duration) || 3);
 
     onMounted(() => {
       // 添加日志来调试设备连接状态

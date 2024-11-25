@@ -221,28 +221,6 @@ const weeklyProgress = computed(() => {
 // 可用的训练模式
 const availableTrainingModes = computed(() => {
   const modes = []
-  const defaultDuration = settingsStore.defaultTrainingDuration || 15
-  const difficulty = settingsStore.breathingPattern || 'beginner'
-  
-  // 根据难度设置不同的标签类型
-  const getDifficultyType = (level) => {
-    switch(level) {
-      case 'beginner': return 'success'
-      case 'intermediate': return 'warning'
-      case 'advanced': return 'danger'
-      default: return 'info'
-    }
-  }
-
-  // 根据难度设置显示文本
-  const getDifficultyText = (level) => {
-    switch(level) {
-      case 'beginner': return '初级'
-      case 'intermediate': return '中级'
-      case 'advanced': return '高级'
-      default: return '未知'
-    }
-  }
   
   if (deviceStore.isBreathingBandConnected) {
     modes.push({
@@ -251,9 +229,9 @@ const availableTrainingModes = computed(() => {
       description: '通过引导式呼吸提高心肺功能',
       icon: 'icon-breathing',
       color: 'blue',
-      difficulty: getDifficultyType(difficulty),
-      difficultyText: getDifficultyText(difficulty),
-      duration: defaultDuration
+      difficulty: 'success',
+      difficultyText: '初级',
+      duration: 10
     })
   }
 
@@ -264,9 +242,9 @@ const availableTrainingModes = computed(() => {
       description: '保持目标心率区间进行训练',
       icon: 'icon-heart',
       color: 'red',
-      difficulty: getDifficultyType(difficulty),
-      difficultyText: getDifficultyText(difficulty),
-      duration: defaultDuration
+      difficulty: 'warning',
+      difficultyText: '中级',
+      duration: {}
     })
   }
 
@@ -277,9 +255,9 @@ const availableTrainingModes = computed(() => {
       description: '提高心肺协调能力的高级训练',
       icon: 'icon-advanced',
       color: 'purple',
-      difficulty: getDifficultyType(difficulty),
-      difficultyText: getDifficultyText(difficulty),
-      duration: defaultDuration
+      difficulty: 'danger',
+      difficultyText: '高级',
+      duration: 20
     })
   }
 

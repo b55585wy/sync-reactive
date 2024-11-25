@@ -197,8 +197,7 @@ const router = useRouter()
 const settingsStore = useSettingsStore()
 const deviceStore = useDeviceStore()
 const trainingStore = useTrainingStore()
-const trainingDuration = computed(() => settingsStore.defaultTrainingDuration);
-const trainingDifficulty = computed(() => settingsStore.defaultTrainingDifficulty);
+
 const bluetoothService = new BluetoothService()
 
 // 状态变量
@@ -221,65 +220,82 @@ const weeklyProgress = computed(() => {
 // 可用的训练模式
 const availableTrainingModes = computed(() => {
   const modes = []
-  const defaultDuration = settingsStore.defaultTrainingDuration || 15
-  const difficulty = settingsStore.breathingPattern || 'beginner'
   
-  // 根据难度设置不同的标签类型
-  const getDifficultyType = (level) => {
-    switch(level) {
-      case 'beginner': return 'success'
-      case 'intermediate': return 'warning'
-      case 'advanced': return 'danger'
-      default: return 'info'
-    }
-  }
-
-  // 根据难度设置显示文本
-  const getDifficultyText = (level) => {
-    switch(level) {
-      case 'beginner': return '初级'
-      case 'intermediate': return '中级'
-      case 'advanced': return '高级'
-      default: return '未知'
-    }
-  }
-  
+  // 基础呼吸训练模式
   if (deviceStore.isBreathingBandConnected) {
     modes.push({
-      id: 'breathing',
+      id: 'basic_breathing',
       name: '基础呼吸训练',
-      description: '通过引导式呼吸提高心肺功能',
+      description: '通过引导式呼吸提高腹式呼吸能力',
       icon: 'icon-breathing',
       color: 'blue',
-      difficulty: getDifficultyType(difficulty),
-      difficultyText: getDifficultyText(difficulty),
-      duration: defaultDuration
+      difficulty: 'success',
+      difficultyText: '初级',
+      duration: 10,
+      requiredDevices: ['breathing']
+    },
+    {
+      id: 'deep_breathing',
+      name: '深度呼吸训练',
+      description: '提高呼吸深度和稳定性',
+      icon: 'icon-deep-breath',
+      color: 'cyan',
+      difficulty: 'warning',
+      difficultyText: '中级',
+      duration: 15,
+      requiredDevices: ['breathing']
     })
   }
 
+  // 心率相关训练模式
   if (deviceStore.isHeartRateBandConnected) {
     modes.push({
-      id: 'heartRate',
-      name: '心率控制训练',
-      description: '保持目标心率区间进行训练',
+      id: 'heart_rate_zone',
+      name: '心率区间训练',
+      description: '在目标心率区间内进行训练',
       icon: 'icon-heart',
       color: 'red',
-      difficulty: getDifficultyType(difficulty),
-      difficultyText: getDifficultyText(difficulty),
-      duration: defaultDuration
+      difficulty: 'warning',
+      difficultyText: '中级',
+      duration: 15,
+      requiredDevices: ['heartRate']
     })
   }
 
+  // 组合训练模式
   if (deviceStore.isBreathingBandConnected && deviceStore.isHeartRateBandConnected) {
     modes.push({
-      id: 'combined',
-      name: '心肺协调训练',
-      description: '提高心肺协调能力的高级训练',
-      icon: 'icon-advanced',
+      id: 'breathing_heart_sync',
+      name: '心肺同步训练',
+      description: '协调呼吸与心率的关系',
+      icon: 'icon-sync',
       color: 'purple',
-      difficulty: getDifficultyType(difficulty),
-      difficultyText: getDifficultyText(difficulty),
-      duration: defaultDuration
+      difficulty: 'danger',
+      difficultyText: '高级',
+      duration: 20,
+      requiredDevices: ['breathing', 'heartRate']
+    },
+    {
+      id: 'stress_reduction',
+      name: '压力释放训练',
+      description: '通过呼吸调节降低心率，缓解压力',
+      icon: 'icon-relax',
+      color: 'green',
+      difficulty: 'warning',
+      difficultyText: '中级',
+      duration: 15,
+      requiredDevices: ['breathing', 'heartRate']
+    },
+    {
+      id: 'meditation',
+      name: '正念冥想',
+      description: '结合呼吸和心率的冥想练习',
+      icon: 'icon-meditation',
+      color: 'orange',
+      difficulty: 'success',
+      difficultyText: '初级',
+      duration: 10,
+      requiredDevices: ['breathing', 'heartRate']
     })
   }
 

@@ -233,7 +233,7 @@ const availableTrainingModes = computed(() => {
       default: return 'info'
     }
   }
-
+ 
   // 根据难度设置显示文本
   const getDifficultyText = (level) => {
     switch(level) {

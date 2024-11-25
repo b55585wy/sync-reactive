@@ -287,7 +287,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
-import { useDeviceStore } from '@/stores/device'
+import { useDeviceStore } from '@/stores/deviceStore'
 import BluetoothService from '@/services/BluetoothService'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, WindPower } from '@element-plus/icons-vue'
@@ -328,14 +328,6 @@ const tempSettings = ref({
   theme: 'light',
   autoSync: true
 })
-
-// 添加单独的 ref 变量，用于心率和呼吸设置
-const targetHeartRateMin = ref(60)
-const targetHeartRateMax = ref(80)
-const inhaleTime = ref(4)
-const holdTime = ref(2)
-const exhaleTime = ref(6)
-const reminderTime = ref('08:00')
 
 // 更新心率设置
 const updateHeartRateSettings = () => {
@@ -403,12 +395,12 @@ const saveChanges = async () => {
     // 合并所有设置
     const newSettings = {
       ...tempSettings.value,
-      targetHeartRateMin: targetHeartRateMin.value,
-      targetHeartRateMax: targetHeartRateMax.value,
-      inhaleTime: inhaleTime.value,
-      holdTime: holdTime.value,
-      exhaleTime: exhaleTime.value,
-      reminderTime: reminderTime.value,
+      targetHeartRateMin: tempSettings.value.targetHeartRateMin,
+      targetHeartRateMax: tempSettings.value.targetHeartRateMax,
+      inhaleTime: tempSettings.value.inhaleTime,
+      holdTime: tempSettings.value.holdTime,
+      exhaleTime: tempSettings.value.exhaleTime,
+      reminderTime: tempSettings.value.reminderTime,
       breathingPattern: tempSettings.value.breathingPattern,
       defaultTrainingDuration: tempSettings.value.defaultTrainingDuration,
       reminderEnabled: tempSettings.value.reminderEnabled,

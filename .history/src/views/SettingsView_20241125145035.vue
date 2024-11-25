@@ -108,8 +108,8 @@
         <div class="settings-card">
           <div class="form-group">
             <label>默认训练时长 (分钟)</label>
-            <el-select v-model="tempSettings.defaultTrainingDuration">
-              <el-option v-for="duration in [5, 10, 15, 20,30]" 
+            <el-select v-model="tempSettings.defaultDuration">
+              <el-option v-for="duration in [3, 5, 10, 15, 20]" 
                         :key="duration" 
                         :label="`${duration}分钟`" 
                         :value="duration" />
@@ -118,7 +118,7 @@
           
           <div class="form-group">
             <label>训练难度</label>
-            <el-select v-model="tempSettings.breathingPattern">
+            <el-select v-model="tempSettings.difficulty">
               <el-option label="初学者" value="beginner" />
               <el-option label="中级" value="intermediate" />
               <el-option label="高级" value="advanced" />
@@ -139,11 +139,11 @@
             <label>提醒设置</label>
             <div class="reminder-settings">
               <el-switch
-                v-model="tempSettings.reminderEnabled"
+                v-model="tempSettings.enableReminders"
                 active-text="开启每日提醒"
               />
               <el-time-picker
-                v-if="tempSettings.reminderEnabled"
+                v-if="tempSettings.enableReminders"
                 v-model="tempSettings.reminderTime"
                 format="HH:mm"
                 placeholder="选择提醒时间"
@@ -206,17 +206,17 @@
               </div>
               <div class="heart-rate-range">
                 <el-input-number 
-                  v-model="tempSettings.targetHeartRateMin" 
+                  v-model="targetHeartRateMin" 
                   :min="40" 
-                  :max="tempSettings.targetHeartRateMax"
+                  :max="targetHeartRateMax"
                   size="small"
                   @change="updateHeartRateSettings">
                   <template #prefix>最小</template>
                 </el-input-number>
                 <span class="separator">-</span>
                 <el-input-number 
-                  v-model="tempSettings.targetHeartRateMax" 
-                  :min="tempSettings.targetHeartRateMin" 
+                  v-model="targetHeartRateMax" 
+                  :min="targetHeartRateMin" 
                   :max="220-settingsStore.age"
                   size="small"
                   @change="updateHeartRateSettings">
@@ -234,21 +234,21 @@
               </div>
               <div class="breathing-rhythm">
                 <el-input-number 
-                  v-model="tempSettings.inhaleTime" 
+                  v-model="inhaleTime" 
                   :min="2" 
                   :max="6"
                   size="small">
                   <template #prefix>吸气</template>
                 </el-input-number>
                 <el-input-number 
-                  v-model="tempSettings.holdTime" 
+                  v-model="holdTime" 
                   :min="0" 
                   :max="4"
                   size="small">
                   <template #prefix>屏息</template>
                 </el-input-number>
                 <el-input-number 
-                  v-model="tempSettings.exhaleTime" 
+                  v-model="exhaleTime" 
                   :min="2" 
                   :max="8"
                   size="small">
@@ -264,7 +264,7 @@
                 <p class="setting-desc">设置每日训练提醒时间</p>
               </div>
               <el-time-picker
-                v-model="tempSettings.reminderTime"
+                v-model="reminderTime"
                 format="HH:mm"
                 placeholder="选择提醒时间"
                 size="small"
@@ -287,11 +287,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
-import { useDeviceStore } from '@/stores/device'
+import { useDeviceStore } from '@/stores/deviceStore'
 import BluetoothService from '@/services/BluetoothService'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Monitor, WindPower } from '@element-plus/icons-vue'
-
+import type { Settings } from '@/types/settings';
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
@@ -308,20 +308,11 @@ const tempSettings = ref({
   height: 170,
   weight: 65,
   // 训练偏好
-  defaultTrainingDuration: 15,
-  breathingPattern: 'beginner',
+  defaultDuration: 5,
+  difficulty: 'beginner',
   goal: ['relaxation'],
-  reminderEnabled: false,
+  enableReminders: false,
   reminderTime: null,
-  reminderDays: [],
-  
-  // 目标设置
-  weeklyGoal: 150,
-  targetHeartRateMin: 60,
-  targetHeartRateMax: 80,
-  inhaleTime: 4,
-  holdTime: 2,
-  exhaleTime: 6,
   
   // 其他设置
   language: 'zh-CN',
@@ -329,37 +320,36 @@ const tempSettings = ref({
   autoSync: true
 })
 
-// 添加单独的 ref 变量，用于心率和呼吸设置
-const targetHeartRateMin = ref(60)
-const targetHeartRateMax = ref(80)
-const inhaleTime = ref(4)
-const holdTime = ref(2)
-const exhaleTime = ref(6)
-const reminderTime = ref('08:00')
+// 心率目标设置
+const targetHeartRateMin = ref(60);
+const targetHeartRateMax = ref(80);
+const inhaleTime = ref(4);
+const holdTime = ref(2);
+const exhaleTime = ref(6);
+const reminderTime = ref(null);
 
 // 更新心率设置
 const updateHeartRateSettings = () => {
   tempSettings.value = {
     ...tempSettings.value,
-    targetHeartRateMin: tempSettings.value.targetHeartRateMin,
-    targetHeartRateMax: tempSettings.value.targetHeartRateMax
+    targetHeartRateMin: targetHeartRateMin.value,
+    targetHeartRateMax: targetHeartRateMax.value
   };
 };
 
 // 初始化临时设置
 onMounted(async () => {
   try {
-    // 初始化设置
+    // ��始化设置
     await settingsStore.initializeSettings();
     
     // 使用 getAllSettings getter 获取所有设置
     const currentSettings = settingsStore.getAllSettings;
-    console.log('Current settings:', currentSettings);
     
     // 更新临时设置
     tempSettings.value = { ...currentSettings };
     
-    // 更新单独的 ref
+    // 更新目标心率等设置
     targetHeartRateMin.value = currentSettings.targetHeartRateMin;
     targetHeartRateMax.value = currentSettings.targetHeartRateMax;
     inhaleTime.value = currentSettings.inhaleTime;
@@ -382,12 +372,12 @@ const cancelChanges = () => {
     // 重置为原始值
     const originalSettings = settingsStore.getAllSettings;
     tempSettings.value = { ...originalSettings };
-    tempSettings.value.targetHeartRateMin = originalSettings.targetHeartRateMin;
-    tempSettings.value.targetHeartRateMax = originalSettings.targetHeartRateMax;
-    tempSettings.value.inhaleTime = originalSettings.inhaleTime;
-    tempSettings.value.holdTime = originalSettings.holdTime;
-    tempSettings.value.exhaleTime = originalSettings.exhaleTime;
-    tempSettings.value.reminderTime = originalSettings.reminderTime;
+    targetHeartRateMin.value = originalSettings.targetHeartRateMin;
+    targetHeartRateMax.value = originalSettings.targetHeartRateMax;
+    inhaleTime.value = originalSettings.inhaleTime;
+    holdTime.value = originalSettings.holdTime;
+    exhaleTime.value = originalSettings.exhaleTime;
+    reminderTime.value = originalSettings.reminderTime;
     
     router.back();
   }).catch(() => {
@@ -408,16 +398,9 @@ const saveChanges = async () => {
       inhaleTime: inhaleTime.value,
       holdTime: holdTime.value,
       exhaleTime: exhaleTime.value,
-      reminderTime: reminderTime.value,
-      breathingPattern: tempSettings.value.breathingPattern,
-      defaultTrainingDuration: tempSettings.value.defaultTrainingDuration,
-      reminderEnabled: tempSettings.value.reminderEnabled,
-      reminderDays: tempSettings.value.reminderDays || []
+      reminderTime: reminderTime.value
     };
 
-    // 打印日志以便调试
-    console.log('Saving settings:', newSettings);
-    
     // 保存设置
     await settingsStore.saveSettings(newSettings);
     
