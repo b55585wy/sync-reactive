@@ -442,80 +442,50 @@ const handleDeviceClick = async (deviceType: 'heartRate' | 'breathing') => {
     if (deviceType === 'heartRate') {
       if (!deviceStore.isHeartRateBandConnected) {
         // 连接心率带
-        const connected = await bluetoothService.connectHeartRateBand();
-        if (connected) {
-          deviceStore.setHeartRateBandConnected(true);
-          ElMessage.success('心率带连接成功');
-        }
+        await bluetoothService.connectHeartRateBand();
+        deviceStore.setHeartRateBandConnected(true);
+        ElMessage.success('心率带连接成功');
       } else {
         // 断开心率带
-        try {
-          await ElMessageBox.confirm(
-            '确定要断开心率带连接吗？',
-            '提示',
-            {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }
-          );
-          await bluetoothService.disconnectHeartRateBand();
-          deviceStore.setHeartRateBandConnected(false);
-          ElMessage.success('心率带已断开连接');
-        } catch (error) {
-          // 用户取消操作，不做任何处理
-          if (error === 'cancel') {
-            return;
+        await ElMessageBox.confirm(
+          '确定要断开心率带连接吗？',
+          '提示',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
           }
-          throw error;
-        }
+        );
+        await bluetoothService.disconnectHeartRateBand();
+        deviceStore.setHeartRateBandConnected(false);
+        ElMessage.success('心率带已断开连接');
       }
     } else if (deviceType === 'breathing') {
       if (!deviceStore.isBreathingBandConnected) {
         // 连接呼吸带
-        try {
-          const connected = await bluetoothService.connectBreathingBand();
-          if (connected) {
-            deviceStore.setBreathingBandConnected(true);
-            ElMessage.success('呼吸带连接成功');
-          }
-        } catch (error) {
-          deviceStore.setBreathingBandConnected(false);
-          throw error;
-        }
+        // await bluetoothService.connectBreathingBand();
+        // deviceStore.setBreathingBandConnected(true);
+        ElMessage.success('呼吸带连接成功');
       } else {
-        // 断开呼吸带
-        try {
-          await ElMessageBox.confirm(
-            '确定要断开呼吸带连接吗？',
-            '提示',
-            {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }
-          );
-          await bluetoothService.disconnectBreathingBand();
-          deviceStore.setBreathingBandConnected(false);
-          ElMessage.success('呼吸带已断开连接');
-        } catch (error) {
-          // 用户取消操作，不做任何处理
-          if (error === 'cancel') {
-            return;
+        await ElMessageBox.confirm(
+          '确定要断开呼吸带连接吗？',
+          '提示',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
           }
-          throw error;
-        }
+        );
+        // await bluetoothService.disconnectBreathingBand();
+        deviceStore.setBreathingBandConnected(false);
+        ElMessage.success('呼吸带已断开连接');
       }
     }
   } catch (error) {
-    console.error('设备操作失败:', error);
-    // 确保在连接失败时重置状态
-    if (deviceType === 'heartRate') {
-      deviceStore.setHeartRateBandConnected(false);
-    } else if (deviceType === 'breathing') {
-      deviceStore.setBreathingBandConnected(false);
+    if (error !== 'cancel') {
+      console.error('设备操作失败:', error);
+      ElMessage.error('设备操作失败: ' + (error.message || '未知错误'));
     }
-    ElMessage.error('设备操作失败: ' + (error.message || '未知错误'));
   }
 };
 
